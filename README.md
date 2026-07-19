@@ -123,6 +123,18 @@ scripts/stage_carfusion_to_wsl.sh \
 
 相同模型、权重、精度与 100 张固定图片下，端到端平均延迟从 60.10 ms 降至 16.63 ms。完整边界和证据见 [reports/optimization/08_final_recommendation.md](reports/optimization/08_final_recommendation.md)。蒸馏实验保留为研究记录，但因没有产生部署延迟收益而未作为推荐方案。
 
+### 可选研究：结构化剪枝 + 恢复蒸馏
+
+仓库新增了独立、默认不启用的结构化剪枝方案。它从 640 baseline 复制学生，物理删除保守通道，再用原模型作冻结教师恢复精度；不会覆盖 baseline。是否采用必须同时通过参数量、完整验证集、固定 100 图可视化和同机 FP16 latency 门禁，蒸馏精度恢复本身不等于部署加速。
+
+```bash
+.venv/bin/python -m pip install --no-deps -r requirements-pruning.txt
+.venv/bin/python scripts/prune_vehicle_pose.py --pruning-ratio 0.15 --device cuda
+.venv/bin/python scripts/train_pose_pruned_distillation.py --config configs/pose_prune_distill.yaml
+```
+
+具体实现、实验梯度和止损边界见 [docs/pruning_distillation.md](docs/pruning_distillation.md)。当前只交付代码与轻量测试，没有运行新的完整训练，也没有新增精度/耗时结论。
+
 ## 测试
 
 ```bash
@@ -138,6 +150,7 @@ DEVICE=cuda:0 IMGSZ=640 scripts/validate_project.sh
 - [训练说明](docs/training.md)
 - [评估说明](docs/evaluation.md)
 - [性能优化说明](docs/optimization.md)
+- [结构化剪枝与恢复蒸馏方案](docs/pruning_distillation.md)
 - [Codex 构建训练系统部门分享底稿](docs/部门分享_从YOLOv10到车辆关键点训练系统.md)
 - [最终版 PPT](outputs/Codex构建YOLOPose训练系统_部门分享_最终版.pptx)
 - [完整演讲稿](outputs/Codex构建YOLOPose训练系统_完整演讲稿.md)

@@ -1,0 +1,166 @@
+"""Tests for opt-in structural pruning followed by pose-output distillation."""
+
+from copy import deepcopy
+from pathlib import Path
+
+import pytest
+import torch
+
+from ultralytics.models.yolov10.prune_distill import (
+    OutputDistillationConfig,
+    PruningConfig,
+    build_pruning_report,
+    collect_head_output_layers,
+    count_parameters,
+    pose_output_distillation_loss,
+    upgrade_for_pruning_distillation,
+)
+from ultralytics.nn.tasks import YOLOv10PoseModel
+
+
+ROOT = Path(__file__).resolve().parents[1]
+POSE_CFG = ROOT / "ultralytics/cfg/models/v10/yolov10n-vehicle-pose.yaml"
+
+
+def _raw_predictions(batch=1, anchors=(16, 4, 1), reg_max=16, keypoints=14):
+    detections = [torch.randn(batch, reg_max * 4 + 1, size, 1) for size in anchors]
+    pose = torch.randn(batch, keypoints * 3, sum(anchors))
+    return detections, pose
+
+
+def _dual_predictions(requires_grad=False):
+    predictions = {
+        "one2many": _raw_predictions(),
+        "one2one": _raw_predictions(),
+    }
+    if requires_grad:
+        for detections, pose in predictions.values():
+            for tensor in [*detections, pose]:
+                tensor.requires_grad_(True)
+    return predictions
+
+
+def _training_batch():
+    keypoints = torch.zeros(1, 14, 3)
+    keypoints[..., :2] = 0.5
+    keypoints[..., 2] = 2
+    return {
+        "img": torch.rand(1, 3, 64, 64),
+        "batch_idx": torch.tensor([0.0]),
+        "cls": torch.tensor([[0.0]]),
+        "bboxes": torch.tensor([[0.5, 0.5, 0.5, 0.5]]),
+        "keypoints": keypoints,
+    }
+
+
+def test_pruning_config_rejects_destructive_or_invalid_settings():
+    config = PruningConfig(pruning_ratio=0.15, iterative_steps=1, round_to=8)
+    assert config.pruning_ratio == 0.15
+    assert config.measure_macs is False
+    for ratio in (0.0, -0.1, 0.5, 1.0):
+        with pytest.raises(ValueError, match="pruning_ratio"):
+            PruningConfig(pruning_ratio=ratio)
+    with pytest.raises(ValueError, match="iterative_steps"):
+        PruningConfig(pruning_ratio=0.15, iterative_steps=0)
+    with pytest.raises(ValueError, match="round_to"):
+        PruningConfig(pruning_ratio=0.15, round_to=0)
+
+
+def test_output_distillation_config_validates_weights_and_resolution():
+    config = OutputDistillationConfig(weight=0.25, teacher_imgsz=640, temperature=2.0)
+    assert config.weight == 0.25
+    with pytest.raises(ValueError, match="weight"):
+        OutputDistillationConfig(weight=-0.1)
+    with pytest.raises(ValueError, match="teacher_imgsz"):
+        OutputDistillationConfig(teacher_imgsz=0)
+    with pytest.raises(ValueError, match="temperature"):
+        OutputDistillationConfig(temperature=0)
+
+
+def test_output_distillation_is_zero_for_identical_raw_predictions():
+    student = _dual_predictions()
+    teacher = deepcopy(student)
+
+    loss = pose_output_distillation_loss(student, teacher, reg_max=16, kpt_shape=(14, 3), temperature=2.0)
+
+    assert loss.item() == pytest.approx(0.0, abs=1e-6)
+
+
+def test_output_distillation_only_backpropagates_into_student():
+    student = _dual_predictions(requires_grad=True)
+    teacher = _dual_predictions(requires_grad=True)
+
+    loss = pose_output_distillation_loss(student, teacher, reg_max=16, kpt_shape=(14, 3), temperature=2.0)
+    loss.backward()
+
+    assert torch.isfinite(loss) and loss.item() > 0
+    assert all(t.grad is not None for branch in student.values() for t in [*branch[0], branch[1]])
+    assert all(t.grad is None for branch in teacher.values() for t in [*branch[0], branch[1]])
+
+
+def test_output_distillation_rejects_missing_branch_or_shape_mismatch():
+    student = _dual_predictions()
+    teacher = _dual_predictions()
+    teacher.pop("one2one")
+    with pytest.raises(ValueError, match="one2one"):
+        pose_output_distillation_loss(student, teacher, reg_max=16, kpt_shape=(14, 3))
+
+    teacher = _dual_predictions()
+    teacher["one2many"][0][0] = torch.randn(1, 65, 8, 1)
+    with pytest.raises(ValueError, match="shape"):
+        pose_output_distillation_loss(student, teacher, reg_max=16, kpt_shape=(14, 3))
+
+
+def test_all_detection_and_pose_output_convolutions_are_protected():
+    model = YOLOv10PoseModel(POSE_CFG, verbose=False)
+    head = model.model[-1]
+
+    protected = collect_head_output_layers(head)
+
+    assert len(protected) == head.nl * 6
+    assert len({id(layer) for layer in protected}) == len(protected)
+    assert {layer.out_channels for layer in protected} == {head.reg_max * 4, head.nc, head.nk}
+
+
+def test_pruning_report_requires_real_structural_reduction():
+    baseline = torch.nn.Sequential(torch.nn.Conv2d(3, 8, 3), torch.nn.Conv2d(8, 4, 1))
+    pruned = torch.nn.Sequential(torch.nn.Conv2d(3, 4, 3), torch.nn.Conv2d(4, 4, 1))
+
+    report = build_pruning_report(count_parameters(baseline), count_parameters(pruned))
+
+    assert report["parameters_after"] < report["parameters_before"]
+    assert 0 < report["parameter_reduction_ratio"] < 1
+    with pytest.raises(RuntimeError, match="did not reduce"):
+        build_pruning_report(count_parameters(baseline), count_parameters(baseline))
+
+
+def test_pruned_model_can_be_upgraded_for_distillation_without_registering_teacher():
+    student = YOLOv10PoseModel(POSE_CFG, verbose=False)
+    teacher = YOLOv10PoseModel(POSE_CFG, verbose=False)
+    upgraded = upgrade_for_pruning_distillation(
+        student,
+        teacher,
+        OutputDistillationConfig(weight=0.25, teacher_imgsz=64),
+    ).train()
+
+    assert all(not parameter.requires_grad for parameter in teacher.parameters())
+    assert not any(name.startswith("distillation_teacher") for name, _ in upgraded.named_parameters())
+
+    loss, items = upgraded.loss(_training_batch())
+
+    assert torch.isfinite(loss) and items.shape == (10,)
+    assert upgraded.last_distillation_loss.item() >= 0
+    loss.backward()
+    assert any(parameter.grad is not None for parameter in upgraded.parameters())
+    assert all(parameter.grad is None for parameter in teacher.parameters())
+
+
+def test_checkpoint_copy_drops_pruning_distillation_teacher():
+    student = YOLOv10PoseModel(POSE_CFG, verbose=False)
+    teacher = YOLOv10PoseModel(POSE_CFG, verbose=False)
+    upgraded = upgrade_for_pruning_distillation(student, teacher, OutputDistillationConfig())
+
+    checkpoint_copy = deepcopy(upgraded)
+
+    assert checkpoint_copy.distillation_teacher is None
+    assert checkpoint_copy.distillation_config is None

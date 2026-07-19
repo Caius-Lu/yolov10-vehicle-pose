@@ -1,0 +1,2 @@
+# Optional dependency for physical dependency-aware channel pruning.
+torch-pruning>=1.6.1,<2.0

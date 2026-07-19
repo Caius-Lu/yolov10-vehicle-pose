@@ -183,6 +183,8 @@ pnnx*
 !/outputs/network_optimization/**
 !/outputs/baseline_weights/
 !/outputs/baseline_weights/**
+/outputs/pruning/
+/vehicle_pose_runs_pruned/
 !/external/
 !/external/**
 /external/**/.git/

@@ -5,7 +5,9 @@ cd "$ROOT"
 PYTHON="${PYTHON:-.venv/bin/python}"
 
 "$PYTHON" -m pytest tests/test_vehicle_pose.py tests/test_carfusion_pipeline.py \
-  tests/test_vehicle_pose_metrics.py tests/test_benchmark_tools.py -q --disable-warnings
+  tests/test_vehicle_pose_metrics.py tests/test_benchmark_tools.py \
+  tests/test_pose_pruning_distillation.py tests/test_pose_pruning_pipeline.py \
+  -q --disable-warnings
 "$PYTHON" benchmarks/compare_outputs.py --device "${DEVICE:-cpu}" --imgsz "${IMGSZ:-128}"
 
 if [[ -f datasets/CarFusion/yolo_pose/conversion_summary.json ]]; then
