@@ -433,9 +433,9 @@ class v8SegmentationLoss(v8DetectionLoss):
 class v8PoseLoss(v8DetectionLoss):
     """Criterion class for computing training losses."""
 
-    def __init__(self, model):  # model must be de-paralleled
+    def __init__(self, model, tal_topk=10):  # model must be de-paralleled
         """Initializes v8PoseLoss with model, sets keypoint variables and declares a keypoint loss instance."""
-        super().__init__(model)
+        super().__init__(model, tal_topk=tal_topk)
         self.kpt_shape = model.model[-1].kpt_shape
         self.bce_pose = nn.BCEWithLogitsLoss()
         is_pose = self.kpt_shape == [17, 3]
@@ -725,3 +725,22 @@ class v10DetectLoss:
         one2one = preds["one2one"]
         loss_one2one = self.one2one(one2one, batch)
         return loss_one2many[0] + loss_one2one[0], torch.cat((loss_one2many[1], loss_one2one[1]))
+
+
+class v10PoseLoss:
+    """Apply pose supervision with the GT indices produced by each YOLOv10 assigner."""
+
+    def __init__(self, model):
+        self.one2many = v8PoseLoss(model, tal_topk=10)
+        self.one2one = v8PoseLoss(model, tal_topk=1)
+        self.one2many_weight = float(model.yaml.get("one2many_loss_weight", 1.0))
+        self.one2one_weight = float(model.yaml.get("one2one_loss_weight", 1.0))
+
+    def __call__(self, preds, batch):
+        one2many_loss, one2many_items = self.one2many(preds["one2many"], batch)
+        one2one_loss, one2one_items = self.one2one(preds["one2one"], batch)
+        total = self.one2many_weight * one2many_loss + self.one2one_weight * one2one_loss
+        items = torch.cat(
+            (self.one2many_weight * one2many_items, self.one2one_weight * one2one_items)
+        )
+        return total, items

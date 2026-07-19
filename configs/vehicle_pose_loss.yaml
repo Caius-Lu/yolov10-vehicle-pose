@@ -1,0 +1,8 @@
+box: 7.5
+cls: 0.5
+dfl: 1.5
+pose: 12.0
+kobj: 1.0
+one2many_loss_weight: 1.0
+one2one_loss_weight: 1.0
+

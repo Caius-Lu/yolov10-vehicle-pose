@@ -1,0 +1,9 @@
+path: datasets/CarFusion/yolo_pose
+train: smoke_train.txt
+val: smoke_val.txt
+
+names:
+  0: vehicle
+
+kpt_shape: [14, 3]
+flip_idx: []

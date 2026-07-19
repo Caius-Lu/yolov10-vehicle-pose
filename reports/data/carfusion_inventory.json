@@ -1,0 +1,18 @@
+{
+  "status": "AUTHORIZED_PACKAGE_TRANSFER_IN_PROGRESS",
+  "source": "/Users/caius/Documents/yolopose/data/CarFusion/OpenDataLab___CarFusion",
+  "remote_target": "/home/caius/projects/yolopose/data/CarFusion/OpenDataLab___CarFusion",
+  "file_count": 503,
+  "total_bytes": 34451319446,
+  "sample_images": 500,
+  "archive": {
+    "path": "raw/CarFusion.tar.gz.00",
+    "bytes": 34123960720,
+    "format": "gzip-compressed POSIX tar",
+    "sha256": "34ae638404d724a50b744dc7cba359b4f38cc336d9c45e5f0cea6a996fe90eb4"
+  },
+  "converter_commit": "ac241a9caec16d45ceb8130b21a541c72cb09c33",
+  "raw_images_after_extract": null,
+  "annotations_after_extract": null,
+  "note": "User explicitly supplied this package. Post-extraction counts remain null until transfer, remote SHA-256 verification, and safe extraction complete."
+}

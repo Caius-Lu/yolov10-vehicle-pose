@@ -1,0 +1,4 @@
+2026-07-16 status=BLOCKED_BY_DATASET_AUTHORIZATION
+Public converter cloned at commit ac241a9caec16d45ceb8130b21a541c72cb09c33.
+Authorized download_carfusion.py was not present. No dataset download was attempted.
+

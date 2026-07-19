@@ -1,0 +1,209 @@
+{"kind":"deck","id":"pr/xstcbi","name":"Deck"}
+{"kind":"layout","layoutId":"8d8ba1b0-024e-4728-a0a7-f3188fef8ce8","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"08a44f38-e338-401c-81fc-e22ffe0a1ea8","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/11s2aa","slide":1,"title":"部门工程实践","textShapes":4}
+{"kind":"textbox","id":"sh/x03mt8fa","slide":1,"name":"cover-kicker","text":"部门工程实践","textPreview":"部门工程实践","textChars":6,"textLines":1,"bbox":[42,40,420,42]}
+{"kind":"textbox","id":"sh/axc3ydgj","slide":1,"name":"cover-title","text":"用 Codex 构建\nYOLOPose 训练系统","textPreview":"用 Codex 构建 | YOLOPose 训练系统","textChars":24,"textLines":2,"bbox":[42,166,1040,274]}
+{"kind":"textbox","id":"sh/byl4ryx4","slide":1,"name":"cover-subtitle","text":"从需求、远程 GPU、训练恢复，到指标、可视门禁与 3.61× 系统优化","textPreview":"从需求、远程 GPU、训练恢复，到指标、可视门禁与 3.61× 系统优化","textChars":36,"textLines":1,"bbox":[42,505,1040,90]}
+{"kind":"textbox","id":"sh/ovulw3yt","slide":1,"name":"cover-meta","text":"CarFusion · YOLOv10n · RTX 3090 Ti · 2026.07","textPreview":"CarFusion · YOLOv10n · RTX 3090 Ti · 2026.07","textChars":44,"textLines":1,"bbox":[42,646,700,28]}
+{"kind":"notes","id":"nt/11s2aa","slide":1,"text":""}
+{"kind":"slide","id":"sl/3dp6k7","slide":2,"title":"CODEX × YOLOPOSE","textShapes":9}
+{"kind":"textbox","id":"sh/fm5ojqlk","slide":2,"name":"kicker-2","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/gnepcv25","slide":2,"name":"title-2","text":"任务不是“写一个 Head”，而是交付可审计闭环","textPreview":"任务不是“写一个 Head”，而是交付可审计闭环","textChars":24,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/hon6l03q","slide":2,"name":"page-2","text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"textbox","id":"sh/6hcn6lk3","slide":2,"name":"s2-l1","text":"输入","textPreview":"输入","textChars":2,"textLines":1,"bbox":[42,200,210,38]}
+{"kind":"textbox","id":"sh/7ilof6lo","slide":2,"name":"s2-b1","text":"一份使用顺序 + 9 个阶段提示词","textPreview":"一份使用顺序 + 9 个阶段提示词","textChars":17,"textLines":1,"bbox":[42,241,470,66]}
+{"kind":"textbox","id":"sh/sjup8b2t","slide":2,"name":"s2-l2","text":"约束","textPreview":"约束","textChars":2,"textLines":1,"bbox":[42,337,210,38]}
+{"kind":"textbox","id":"sh/tk36hg3e","slide":2,"name":"s2-b2","text":"不破坏检测语义；不伪造数据与指标；每一步留下证据","textPreview":"不破坏检测语义；不伪造数据与指标；每一步留下证据","textChars":24,"textLines":1,"bbox":[42,378,500,118]}
+{"kind":"textbox","id":"sh/qdw7i5k7","slide":2,"name":"s2-l3","text":"交付","textPreview":"交付","textChars":2,"textLines":1,"bbox":[42,527,210,38]}
+{"kind":"textbox","id":"sh/beporals","slide":2,"name":"s2-b3","text":"代码 + 测试 + 训练 + 评估 + benchmark + 文档","textPreview":"代码 + 测试 + 训练 + 评估 + benchmark + 文档","textChars":34,"textLines":1,"bbox":[42,568,500,70]}
+{"kind":"shape","id":"sh/3m5wnulg","slide":2,"name":"s2-image-frame","bbox":[590,175,648,454]}
+{"kind":"image","id":"im/p8baxs3m","slide":2,"name":"","geometry":"roundRect","alt":"YOLOPose vehicle boxes and keypoints on a CarFusion street scene","bbox":[590,175,648,454]}
+{"kind":"notes","id":"nt/3dp6k7","slide":2,"text":""}
+{"kind":"slide","id":"sl/bl3uit","slide":3,"title":"CODEX × YOLOPOSE","textShapes":14}
+{"kind":"textbox","id":"sh/v21w7mhs","slide":3,"name":"kicker-3","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/g3ad0ryd","slide":3,"name":"title-3","text":"Codex 把自然语言目标变成九阶段门禁","textPreview":"Codex 把自然语言目标变成九阶段门禁","textChars":20,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/h4je9czy","slide":3,"name":"page-3","text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"shape","id":"sh/6x8vuxgb","slide":3,"name":"s3-axis","bbox":[78,350,1122,0.03]}
+{"kind":"shape","id":"sh/7yhw32hw","slide":3,"name":"s3-node1","bbox":[92,333,34,34]}
+{"kind":"shape","id":"sh/8zqdw7y1","slide":3,"name":"s3-node2","bbox":[456,333,34,34]}
+{"kind":"shape","id":"sh/t0ze5czm","slide":3,"name":"s3-node3","bbox":[820,333,34,34]}
+{"kind":"shape","id":"sh/y9ovqxgz","slide":3,"name":"s3-node4","bbox":[1166,333,34,34]}
+{"kind":"textbox","id":"sh/jahwz2hk","slide":3,"name":"s3-label1","text":"01–03","textPreview":"01–03","textChars":5,"textLines":1,"bbox":[92,288,160,30]}
+{"kind":"textbox","id":"sh/jytkryhs","slide":3,"name":"s3-label2","text":"04–06","textPreview":"04–06","textChars":5,"textLines":1,"bbox":[456,288,160,30]}
+{"kind":"textbox","id":"sh/idkjidg7","slide":3,"name":"s3-label3","text":"07–08","textPreview":"07–08","textChars":5,"textLines":1,"bbox":[820,288,160,30]}
+{"kind":"textbox","id":"sh/50v2t8fy","slide":3,"name":"s3-label4","text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1122,288,78,30]}
+{"kind":"textbox","id":"sh/kz21k3yd","slide":3,"name":"s3-title1","text":"审计与设计","textPreview":"审计与设计","textChars":5,"textLines":1,"bbox":[92,397,260,46]}
+{"kind":"textbox","id":"sh/72dkvix4","slide":3,"name":"s3-body1","text":"固定上游\n读取调用链\n定义风险与验收","textPreview":"固定上游 | 读取调用链 | 定义风险与验收","textChars":18,"textLines":3,"bbox":[92,454,260,122]}
+{"kind":"textbox","id":"sh/614jmdgj","slide":3,"name":"s3-title2","text":"实现与训练","textPreview":"实现与训练","textChars":5,"textLines":1,"bbox":[456,397,260,46]}
+{"kind":"textbox","id":"sh/t4v2xsfu","slide":3,"name":"s3-body2","text":"TDD 实现\n数据转换 / 质检\nsmoke → overfit → baseline","textPreview":"TDD 实现 | 数据转换 / 质检 | smoke → overfit → baseline","textChars":43,"textLines":3,"bbox":[456,454,300,132]}
+{"kind":"textbox","id":"sh/s3m1onyp","slide":3,"name":"s3-title3","text":"评估与优化","textPreview":"评估与优化","textChars":5,"textLines":1,"bbox":[820,397,260,46]}
+{"kind":"textbox","id":"sh/n690jehk","slide":3,"name":"s3-body3","text":"指标 + 可视门禁\nbenchmark\n独立性能验证","textPreview":"指标 + 可视门禁 | benchmark | 独立性能验证","textChars":26,"textLines":3,"bbox":[820,454,260,122]}
+{"kind":"textbox","id":"sh/m50jatgz","slide":3,"name":"s3-title4","text":"可复现交付","textPreview":"可复现交付","textChars":5,"textLines":1,"bbox":[980,195,220,46]}
+{"kind":"notes","id":"nt/bl3uit","slide":3,"text":""}
+{"kind":"slide","id":"sl/v5ynf5","slide":4,"title":"CODEX × YOLOPOSE","textShapes":12}
+{"kind":"textbox","id":"sh/fetgnm14","slide":4,"name":"kicker-4","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/gf2hgrip","slide":4,"name":"title-4","text":"先审计真实调用链，关键点监督才不会错位","textPreview":"先审计真实调用链，关键点监督才不会错位","textChars":19,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/hgvypwju","slide":4,"name":"page-4","text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"textbox","id":"sh/2h4zi10f","slide":4,"name":"s4-left-title","text":"YOLOv10 的关键风险","textPreview":"YOLOv10 的关键风险","textChars":13,"textLines":1,"bbox":[42,184,430,42]}
+{"kind":"textbox","id":"sh/3idgrm10","slide":4,"name":"s4-left-body","text":"训练同时存在 one-to-many 与 one-to-one 分支。关键点必须继承各自 bbox assigner 的 target_gt_idx，不能按预测框顺序猜 GT。","textPreview":"训练同时存在 one-to-many 与 one-to-one 分支。关键点必须继承各自 bbox assigner 的 target_gt_idx，不能按预测框顺序猜 GT。","textChars":88,"textLines":1,"bbox":[42,244,430,186]}
+{"kind":"shape","id":"sh/4jmhkril","slide":4,"name":"s4-code-bg","bbox":[42,462,430,150]}
+{"kind":"textbox","id":"sh/p4vytwj6","slide":4,"name":"s4-code","text":"target_gt_idx\n  → matched GT keypoints\n  → pose / visibility loss","textPreview":"target_gt_idx |   → matched GT keypoints |   → pose / visibility loss","textChars":65,"textLines":3,"bbox":[70,490,374,102]}
+{"kind":"shape","id":"sh/q54zm10r","slide":4,"name":"s4-arrow1","bbox":[530,302,120,0.03]}
+{"kind":"shape","id":"sh/r6dgv61c","slide":4,"name":"s4-arrow2","bbox":[815,302,120,0.03]}
+{"kind":"shape","id":"sh/zyx83i1k","slide":4,"name":"s4-n1","bbox":[540,222,245,164]}
+{"kind":"textbox","id":"sh/edo7ud0z","slide":4,"name":"s4-n1t","text":"Backbone / Neck","textPreview":"Backbone / Neck","textChars":15,"textLines":1,"bbox":[568,260,190,42]}
+{"kind":"textbox","id":"sh/10fq5sjq","slide":4,"name":"s4-n1b","text":"P3 · P4 · P5","textPreview":"P3 · P4 · P5","textChars":12,"textLines":1,"bbox":[568,316,190,34]}
+{"kind":"shape","id":"sh/0z6pwni5","slide":4,"name":"s4-n2","bbox":[825,222,245,164]}
+{"kind":"textbox","id":"sh/rax8zi1o","slide":4,"name":"s4-n2t","text":"v10Pose Head","textPreview":"v10Pose Head","textChars":12,"textLines":1,"bbox":[853,260,190,42]}
+{"kind":"textbox","id":"sh/q947qd03","slide":4,"name":"s4-n2b","text":"14 × 3 · pure conv","textPreview":"14 × 3 · pure conv","textChars":18,"textLines":1,"bbox":[853,316,190,34]}
+{"kind":"shape","id":"sh/dcfq18je","slide":4,"name":"s4-n3","bbox":[1095,222,143,164]}
+{"kind":"textbox","id":"sh/cb6ps3i9","slide":4,"name":"s4-n3t","text":"双分支\nLoss","textPreview":"双分支 | Loss","textChars":8,"textLines":2,"bbox":[1112,258,110,78]}
+{"kind":"textbox","id":"sh/b6h8b2hs","slide":4,"name":"s4-foot","text":"训练保留 Detect；推理只取 one-to-one / NMS-free","textPreview":"训练保留 Detect；推理只取 one-to-one / NMS-free","textChars":38,"textLines":1,"bbox":[540,452,698,94]}
+{"kind":"notes","id":"nt/v5ynf5","slide":4,"text":""}
+{"kind":"slide","id":"sl/vyowm4","slide":5,"title":"CODEX × YOLOPOSE","textShapes":11}
+{"kind":"textbox","id":"sh/4j6t436h","slide":5,"name":"kicker-5","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/3ixcvy5w","slide":5,"name":"title-5","text":"测试把“应该正确”变成可重复证据","textPreview":"测试把“应该正确”变成可重复证据","textChars":16,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/ihob2tor","slide":5,"name":"page-5","text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"textbox","id":"sh/d8zu18ne","slide":5,"name":"s5-intro","text":"先定义可检查的不变量，再写最小实现。最终全量 pytest 退出码为 0；Vehicle Pose 聚焦回归 9/9 通过。","textPreview":"先定义可检查的不变量，再写最小实现。最终全量 pytest 退出码为 0；Vehicle Pose 聚焦回归 9/9 通过。","textChars":62,"textLines":1,"bbox":[42,170,600,108]}
+{"kind":"textbox","id":"sh/c7qt836t","slide":5,"name":"s5-c1","text":"✓  assigner GT 索引贯穿 bbox 与 keypoint","textPreview":"✓  assigner GT 索引贯穿 bbox 与 keypoint","textChars":35,"textLines":1,"bbox":[710,180,500,52]}
+{"kind":"textbox","id":"sh/r6hczy58","slide":5,"name":"s5-c2","text":"✓  one-to-many / one-to-one 均可反传","textPreview":"✓  one-to-many / one-to-one 均可反传","textChars":32,"textLines":1,"bbox":[710,252,500,52]}
+{"kind":"textbox","id":"sh/q58b6ton","slide":5,"name":"s5-c3","text":"✓  空目标、checkpoint、官方 Detect 回归","textPreview":"✓  空目标、checkpoint、官方 Detect 回归","textChars":30,"textLines":1,"bbox":[710,324,500,52]}
+{"kind":"textbox","id":"sh/tcvap4nu","slide":5,"name":"s5-c4","text":"✓  one2one_only 与原输出最大误差 0","textPreview":"✓  one2one_only 与原输出最大误差 0","textChars":26,"textLines":1,"bbox":[710,396,500,52]}
+{"kind":"textbox","id":"sh/8bmtwz69","slide":5,"name":"s5-c5","text":"✓  Predictor xywh → xyxy 回归测试","textPreview":"✓  Predictor xywh → xyxy 回归测试","textChars":29,"textLines":1,"bbox":[710,468,500,52]}
+{"kind":"shape","id":"sh/650n21kv","slide":5,"name":"s5-stat","bbox":[42,330,580,248]}
+{"kind":"textbox","id":"sh/769ob6lg","slide":5,"name":"s5-stat-value","text":"9 / 9","textPreview":"9 / 9","textChars":5,"textLines":1,"bbox":[76,356,230,100]}
+{"kind":"textbox","id":"sh/s7254r21","slide":5,"name":"s5-stat-label","text":"Vehicle Pose 回归\n1.18 秒完成","textPreview":"Vehicle Pose 回归 | 1.18 秒完成","textChars":24,"textLines":2,"bbox":[76,474,360,74]}
+{"kind":"notes","id":"nt/vyowm4","slide":5,"text":""}
+{"kind":"slide","id":"sl/u2dbn1","slide":6,"title":"CODEX × YOLOPOSE","textShapes":12}
+{"kind":"textbox","id":"sh/21knyts7","slide":6,"name":"kicker-6","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/povmtoby","slide":6,"name":"title-6","text":"远程长任务靠断点、哈希和门禁推进","textPreview":"远程长任务靠断点、哈希和门禁推进","textChars":16,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/onm50jad","slide":6,"name":"page-6","text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"shape","id":"sh/fyt4netg","slide":6,"name":"s6-card1","bbox":[42,170,374,366]}
+{"kind":"shape","id":"sh/exk3u9sb","slide":6,"name":"s6-card2","bbox":[453,170,374,366]}
+{"kind":"shape","id":"sh/10bmpobm","slide":6,"name":"s6-card3","bbox":[864,170,374,366]}
+{"kind":"textbox","id":"sh/0z25wja1","slide":6,"name":"s6-k1","text":"数据","textPreview":"数据","textChars":2,"textLines":1,"bbox":[74,204,120,30]}
+{"kind":"textbox","id":"sh/rut4jutk","slide":6,"name":"s6-t1","text":"32 GiB 归档\n先 SHA-256，再解压","textPreview":"32 GiB 归档 | 先 SHA-256，再解压","textChars":23,"textLines":2,"bbox":[74,250,310,92]}
+{"kind":"textbox","id":"sh/6t03q9cz","slide":6,"name":"s6-b1","text":"磁盘不足后改到 Windows E 盘；不把半截归档当成可用数据。","textPreview":"磁盘不足后改到 Windows E 盘；不把半截归档当成可用数据。","textChars":33,"textLines":1,"bbox":[74,380,310,108]}
+{"kind":"textbox","id":"sh/svax476d","slide":6,"name":"s6-k2","text":"训练","textPreview":"训练","textChars":2,"textLines":1,"bbox":[485,204,120,30]}
+{"kind":"textbox","id":"sh/tgjydc7y","slide":6,"name":"s6-t2","text":"epoch 176\nWSL 重启中断","textPreview":"epoch 176 | WSL 重启中断","textChars":18,"textLines":2,"bbox":[485,250,310,92]}
+{"kind":"textbox","id":"sh/6tsf2hon","slide":6,"name":"s6-b2","text":"核对进程、挂载、last.pt 和 results.csv；只续跑原任务，不启动重复 baseline。","textPreview":"核对进程、挂载、last.pt 和 results.csv；只续跑原任务，不启动重复 baseline。","textChars":52,"textLines":1,"bbox":[485,380,310,120]}
+{"kind":"textbox","id":"sh/7u1gb2p8","slide":6,"name":"s6-k3","text":"恢复","textPreview":"恢复","textChars":2,"textLines":1,"bbox":[896,204,120,30]}
+{"kind":"textbox","id":"sh/krqx076h","slide":6,"name":"s6-t3","text":"175 epoch\n训练成果保住","textPreview":"175 epoch | 训练成果保住","textChars":16,"textLines":2,"bbox":[896,250,310,92]}
+{"kind":"textbox","id":"sh/5sjy9c72","slide":6,"name":"s6-b3","text":"最后 25 epoch 用时 1.230 h；checkpoint 让故障成为可恢复事件。","textPreview":"最后 25 epoch 用时 1.230 h；checkpoint 让故障成为可恢复事件。","textChars":45,"textLines":1,"bbox":[896,380,310,108]}
+{"kind":"shape","id":"sh/ip8fyx8b","slide":6,"name":"s6-axis","bbox":[100,588,1050,0.03]}
+{"kind":"shape","id":"sh/jqhg72pw","slide":6,"name":"s6-dot1","bbox":[100,580,18,18]}
+{"kind":"shape","id":"sh/onuxcr6l","slide":6,"name":"s6-dot2","bbox":[510,580,18,18]}
+{"kind":"shape","id":"sh/po3ylw76","slide":6,"name":"s6-dot3","bbox":[920,580,18,18]}
+{"kind":"notes","id":"nt/u2dbn1","slide":6,"text":""}
+{"kind":"slide","id":"sl/plu88a","slide":7,"title":"CODEX × YOLOPOSE","textShapes":10}
+{"kind":"textbox","id":"sh/gje5gjex","slide":7,"name":"kicker-7","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/vi5o7exc","slide":7,"name":"title-7","text":"200 epochs 后，检测与姿态形成可复现基线","textPreview":"200 epochs 后，检测与姿态形成可复现基线","textChars":25,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/uhwne9w7","slide":7,"name":"page-7","text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"shape","id":"sh/5o76dofu","slide":7,"name":"s7-stat1","bbox":[42,164,250,140]}
+{"kind":"shape","id":"sh/4nepkje9","slide":7,"name":"s7-stat2","bbox":[310,164,250,140]}
+{"kind":"shape","id":"sh/3m5obexo","slide":7,"name":"s7-stat3","bbox":[578,164,250,140]}
+{"kind":"textbox","id":"sh/ilwni9w3","slide":7,"name":"s7-v1","text":"0.665","textPreview":"0.665","textChars":5,"textLines":1,"bbox":[68,184,196,62]}
+{"kind":"textbox","id":"sh/dc76h8fq","slide":7,"name":"s7-l1","text":"Box mAP50-95","textPreview":"Box mAP50-95","textChars":12,"textLines":1,"bbox":[68,258,196,28]}
+{"kind":"textbox","id":"sh/srypo3e5","slide":7,"name":"s7-v2","text":"0.515","textPreview":"0.515","textChars":5,"textLines":1,"bbox":[336,184,196,62]}
+{"kind":"textbox","id":"sh/apgret07","slide":7,"name":"s7-l2","text":"Pose mAP50-95","textPreview":"Pose mAP50-95","textChars":13,"textLines":1,"bbox":[336,258,196,28]}
+{"kind":"textbox","id":"sh/vqpsne1s","slide":7,"name":"s7-v3","text":"0.6686","textPreview":"0.6686","textChars":6,"textLines":1,"bbox":[604,184,196,62]}
+{"kind":"textbox","id":"sh/wbitgjid","slide":7,"name":"s7-l3","text":"PCK@0.05","textPreview":"PCK@0.05","textChars":8,"textLines":1,"bbox":[604,258,196,28]}
+{"kind":"textbox","id":"sh/xcrapojy","slide":7,"name":"s7-data","text":"验证集\n3,606 图\n11,569 实例","textPreview":"验证集 | 3,606 图 | 11,569 实例","textChars":21,"textLines":3,"bbox":[886,180,310,116]}
+{"kind":"shape","id":"sh/id0bit0j","slide":7,"name":"s7-image-frame","bbox":[42,334,1196,292]}
+{"kind":"image","id":"im/83a98n29","slide":7,"name":"","geometry":"roundRect","alt":"Training and validation curves across 200 epochs","bbox":[52,344,1176,272]}
+{"kind":"notes","id":"nt/plu88a","slide":7,"text":""}
+{"kind":"slide","id":"sl/098dag","slide":8,"title":"CODEX × YOLOPOSE","textShapes":6}
+{"kind":"textbox","id":"sh/b2tgfa58","slide":8,"name":"kicker-8","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/c32h8fmt","slide":8,"name":"title-8","text":"可视化发现了指标没有暴露的 Predictor 缺陷","textPreview":"可视化发现了指标没有暴露的 Predictor 缺陷","textChars":26,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/xovyhkne","slide":8,"name":"page-8","text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"textbox","id":"sh/yp4zap4z","slide":8,"name":"s8-before-label","text":"修复前：关键点大体合理，但宽图上的框被当成 xyxy 直接缩放，出现巨框。","textPreview":"修复前：关键点大体合理，但宽图上的框被当成 xyxy 直接缩放，出现巨框。","textChars":37,"textLines":1,"bbox":[42,164,570,68]}
+{"kind":"textbox","id":"sh/zqdgju5k","slide":8,"name":"s8-after-label","text":"修复后：先 xywh→xyxy，再 scale_boxes；框与关键点回到车辆轮廓。","textPreview":"修复后：先 xywh→xyxy，再 scale_boxes；框与关键点回到车辆轮廓。","textChars":42,"textLines":1,"bbox":[668,164,570,68]}
+{"kind":"shape","id":"sh/krmhczmp","slide":8,"name":"s8-frame1","bbox":[42,244,570,352]}
+{"kind":"shape","id":"sh/lsvylkna","slide":8,"name":"s8-frame2","bbox":[668,244,570,352]}
+{"kind":"textbox","id":"sh/mt4zep4v","slide":8,"name":"s8-note","text":"Validator 指标没变：缺陷只在 raw Predictor 路径","textPreview":"Validator 指标没变：缺陷只在 raw Predictor 路径","textChars":36,"textLines":1,"bbox":[42,626,940,34]}
+{"kind":"image","id":"im/2xsb6hc7","slide":8,"name":"","geometry":"roundRect","alt":"Before fix: oversized vehicle boxes","bbox":[52,254,550,332]}
+{"kind":"image","id":"im/0retg7m9","slide":8,"name":"","geometry":"roundRect","alt":"After fix: correctly scaled vehicle boxes","bbox":[678,254,550,332]}
+{"kind":"notes","id":"nt/098dag","slide":8,"text":""}
+{"kind":"slide","id":"sl/arxlag","slide":9,"title":"CODEX × YOLOPOSE","textShapes":7}
+{"kind":"textbox","id":"sh/bqpgfilg","slide":9,"name":"kicker-9","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/wryxonml","slide":9,"name":"title-9","text":"100 图视觉门禁通过后，才继续做性能结论","textPreview":"100 图视觉门禁通过后，才继续做性能结论","textChars":21,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/xsryhs36","slide":9,"name":"page-9","text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"textbox","id":"sh/yt0fqx4r","slide":9,"name":"s9-l1","text":"固定样本覆盖","textPreview":"固定样本覆盖","textChars":6,"textLines":1,"bbox":[42,190,220,34]}
+{"kind":"textbox","id":"sh/ju9gj2lc","slide":9,"name":"s9-b1","text":"宽图 · 边缘截断\n遮挡 · 多车 · 尺度变化","textPreview":"宽图 · 边缘截断 | 遮挡 · 多车 · 尺度变化","textChars":24,"textLines":2,"bbox":[42,238,410,110]}
+{"kind":"textbox","id":"sh/kvixs7mx","slide":9,"name":"s9-l2","text":"检查结论","textPreview":"检查结论","textChars":4,"textLines":1,"bbox":[42,398,220,34]}
+{"kind":"textbox","id":"sh/lwrylc3i","slide":9,"name":"s9-b2","text":"框与车辆轮廓一致\n关键点落在车身/车轮区域\n异常与遮挡指标方向一致","textPreview":"框与车辆轮廓一致 | 关键点落在车身/车轮区域 | 异常与遮挡指标方向一致","textChars":33,"textLines":3,"bbox":[42,446,470,130]}
+{"kind":"shape","id":"sh/6x0fux43","slide":9,"name":"s9-frame","bbox":[550,170,688,438]}
+{"kind":"image","id":"im/e5cjm50z","slide":9,"name":"","geometry":"roundRect","alt":"Fixed YOLOPose prediction with vehicle box, confidence and keypoints","bbox":[560,180,668,418]}
+{"kind":"notes","id":"nt/arxlag","slide":9,"text":""}
+{"kind":"slide","id":"sl/kgwhpn","slide":10,"title":"CODEX × YOLOPOSE","textShapes":9}
+{"kind":"textbox","id":"sh/bm9472xk","slide":10,"name":"kicker-10","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/wni5g7ep","slide":10,"name":"title-10","text":"最大的端到端耗时不在模型，而在 /mnt/e","textPreview":"最大的端到端耗时不在模型，而在 /mnt/e","textChars":22,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/xobm9cfa","slide":10,"name":"page-10","text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"shape","id":"sh/2h03axwn","slide":10,"name":"s10-chart-frame","bbox":[42,164,700,464]}
+{"kind":"textbox","id":"sh/ni9432x8","slide":10,"name":"s10-method","text":"同一 checkpoint · 同一 100 JPEG · 3 × 1000 次 · batch 1","textPreview":"同一 checkpoint · 同一 100 JPEG · 3 × 1000 次 · batch 1","textChars":50,"textLines":1,"bbox":[780,176,430,74]}
+{"kind":"textbox","id":"sh/oji5c7et","slide":10,"name":"s10-stat1","text":"−72.3%","textPreview":"−72.3%","textChars":6,"textLines":1,"bbox":[780,294,210,74]}
+{"kind":"textbox","id":"sh/pkrm5sfe","slide":10,"name":"s10-stat1l","text":"平均延迟","textPreview":"平均延迟","textChars":4,"textLines":1,"bbox":[780,374,210,32]}
+{"kind":"textbox","id":"sh/6dkn6hw7","slide":10,"name":"s10-stat2","text":"3.61×","textPreview":"3.61×","textChars":5,"textLines":1,"bbox":[1010,294,200,74]}
+{"kind":"textbox","id":"sh/7et4fmxs","slide":10,"name":"s10-stat2l","text":"吞吐提升","textPreview":"吞吐提升","textChars":4,"textLines":1,"bbox":[1010,374,200,32]}
+{"kind":"textbox","id":"sh/7ep03mhc","slide":10,"name":"s10-conclusion","text":"图片字节 SHA-256 一致，模型与精度未改变","textPreview":"图片字节 SHA-256 一致，模型与精度未改变","textChars":24,"textLines":1,"bbox":[780,476,430,92]}
+{"kind":"chart","id":"ch/i1svi1or","slide":10,"name":"","chartType":"bar","bbox":[74,200,636,380]}
+{"kind":"notes","id":"nt/kgwhpn","slide":10,"text":""}
+{"kind":"slide","id":"sl/8exb0k","slide":11,"title":"CODEX × YOLOPOSE","textShapes":11}
+{"kind":"textbox","id":"sh/q10j6pwj","slide":11,"name":"kicker-11","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/d4b2h4va","slide":11,"name":"title-11","text":"零精度损失方案被固化成独立、可审计入口","textPreview":"零精度损失方案被固化成独立、可审计入口","textChars":19,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/c3218zep","slide":11,"name":"page-11","text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"shape","id":"sh/3y90bad8","slide":11,"name":"s11-code-bg","bbox":[42,170,720,388]}
+{"kind":"textbox","id":"sh/2d0j25wn","slide":11,"name":"s11-code","text":"scripts/stage_carfusion_to_wsl.sh \\\n  datasets/CarFusion/yolo_pose \\\n  /home/caius/datasets/CarFusion/yolo_pose \\\n  reports/optimization/runtime_configs/\\\n    CarFusion-pose-wsl.yaml","textPreview":"scripts/stage_carfusion_to_wsl.sh \\ |   datasets/CarFusion/yolo_pose \\ |   /home/caius/datasets/CarFusion/yolo_pose \\ |   reports/optimiz...","textChars":182,"textLines":5,"bbox":[72,214,660,244]}
+{"kind":"textbox","id":"sh/p0r2dkve","slide":11,"name":"s11-step1","text":"① 解引用复制","textPreview":"① 解引用复制","textChars":7,"textLines":1,"bbox":[820,186,370,42]}
+{"kind":"textbox","id":"sh/4zi14fet","slide":11,"name":"s11-step1b","text":"图片从 Windows 挂载盘实体化到 ext4","textPreview":"图片从 Windows 挂载盘实体化到 ext4","textChars":24,"textLines":1,"bbox":[820,232,370,56]}
+{"kind":"textbox","id":"sh/fa907adw","slide":11,"name":"s11-step2","text":"② SHA-256 门禁","textPreview":"② SHA-256 门禁","textChars":12,"textLines":1,"bbox":[820,322,370,42]}
+{"kind":"textbox","id":"sh/u9gjy5wr","slide":11,"name":"s11-step2b","text":"缺失、额外或哈希不一致即失败","textPreview":"缺失、额外或哈希不一致即失败","textChars":14,"textLines":1,"bbox":[820,368,370,56]}
+{"kind":"textbox","id":"sh/8v218b21","slide":11,"name":"s11-step3","text":"③ 新 runtime YAML","textPreview":"③ 新 runtime YAML","textChars":16,"textLines":1,"bbox":[820,458,370,42]}
+{"kind":"textbox","id":"sh/9wbihg3m","slide":11,"name":"s11-step3b","text":"原数据、代码、checkpoint、baseline 输出均不改","textPreview":"原数据、代码、checkpoint、baseline 输出均不改","textChars":32,"textLines":1,"bbox":[820,504,370,68]}
+{"kind":"textbox","id":"sh/mt0j6lkv","slide":11,"name":"s11-source","text":"依据：Microsoft WSL 文件系统性能建议","textPreview":"依据：Microsoft WSL 文件系统性能建议","textChars":25,"textLines":1,"bbox":[42,606,720,28]}
+{"kind":"notes","id":"nt/8exb0k","slide":11,"text":""}
+{"kind":"slide","id":"sl/ejnlxm","slide":12,"title":"CODEX × YOLOPOSE","textShapes":7}
+{"kind":"textbox","id":"sh/c3y1gnud","slide":12,"name":"kicker-12","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/b2pk7ids","slide":12,"name":"title-12","text":"结果必须连同限制一起交付","textPreview":"结果必须连同限制一起交付","textChars":12,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/a1gjedc7","slide":12,"name":"page-12","text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"shape","id":"sh/lsr2dsvu","slide":12,"name":"s12-chart-frame","bbox":[42,170,760,430]}
+{"kind":"textbox","id":"sh/kri1knu9","slide":12,"name":"s12-stat","text":"索引 13","textPreview":"索引 13","textChars":5,"textLines":1,"bbox":[856,202,320,74]}
+{"kind":"textbox","id":"sh/zq9kbido","slide":12,"name":"s12-stat2","text":"有效标注 = 0","textPreview":"有效标注 = 0","textChars":8,"textLines":1,"bbox":[856,288,320,50]}
+{"kind":"textbox","id":"sh/ypgjixcj","slide":12,"name":"s12-body","text":"模型接口仍为 14×3；当前数据只支持 13 个点的监督与精度声明。","textPreview":"模型接口仍为 14×3；当前数据只支持 13 个点的监督与精度声明。","textChars":34,"textLines":1,"bbox":[856,374,340,120]}
+{"kind":"textbox","id":"sh/1wn218vq","slide":12,"name":"s12-foot","text":"flip_idx 继续为空，左右语义确认前禁用水平翻转。","textPreview":"flip_idx 继续为空，左右语义确认前禁用水平翻转。","textChars":28,"textLines":1,"bbox":[856,530,340,70]}
+{"kind":"chart","id":"ch/cnmt8zqx","slide":12,"name":"","chartType":"bar","bbox":[72,210,700,340]}
+{"kind":"notes","id":"nt/ejnlxm","slide":12,"text":""}
+{"kind":"slide","id":"sl/031ask","slide":13,"title":"CODEX × YOLOPOSE","textShapes":19}
+{"kind":"textbox","id":"sh/9ojap0rq","slide":13,"name":"kicker-13","text":"CODEX × YOLOPOSE","textPreview":"CODEX × YOLOPOSE","textChars":16,"textLines":1,"bbox":[42,30,330,28]}
+{"kind":"textbox","id":"sh/mlsrul8f","slide":13,"name":"title-13","text":"可复用的 Codex 模式：目标、约束、证据、恢复、复盘","textPreview":"可复用的 Codex 模式：目标、约束、证据、恢复、复盘","textChars":28,"textLines":1,"bbox":[42,68,1195,82]}
+{"kind":"textbox","id":"sh/7m1snq9k","slide":13,"name":"page-13","text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1180,664,58,24]}
+{"kind":"shape","id":"sh/kzq9sbq9","slide":13,"name":"s13-axis","bbox":[100,370,1080,0.03]}
+{"kind":"shape","id":"sh/l0jalgru","slide":13,"name":"s13-dot-1","bbox":[100,345,50,50]}
+{"kind":"textbox","id":"sh/yx8rql83","slide":13,"name":"s13-num-1","text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[100,352,50,34]}
+{"kind":"textbox","id":"sh/zyhsj69o","slide":13,"name":"s13-title-1","text":"定义完成","textPreview":"定义完成","textChars":4,"textLines":1,"bbox":[76,430,180,42]}
+{"kind":"textbox","id":"sh/cvq9obqx","slide":13,"name":"s13-body-1","text":"目标 + 不可破坏项","textPreview":"目标 + 不可破坏项","textChars":10,"textLines":1,"bbox":[76,486,190,66]}
+{"kind":"shape","id":"sh/xwzahgri","slide":13,"name":"s13-dot-2","bbox":[340,345,50,50]}
+{"kind":"textbox","id":"sh/147ihk72","slide":13,"name":"s13-num-2","text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[340,352,50,34]}
+{"kind":"textbox","id":"sh/g3y18zqx","slide":13,"name":"s13-title-2","text":"先读后改","textPreview":"先读后改","textChars":4,"textLines":1,"bbox":[316,430,180,42]}
+{"kind":"textbox","id":"sh/f250fupc","slide":13,"name":"s13-body-2","text":"仓库 / 环境 / 数据","textPreview":"仓库 / 环境 / 数据","textChars":12,"textLines":1,"bbox":[316,486,190,66]}
+{"kind":"shape","id":"sh/e1wj6p8r","slide":13,"name":"s13-dot-3","bbox":[580,345,50,50]}
+{"kind":"textbox","id":"sh/t0nidk76","slide":13,"name":"s13-num-3","text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[580,352,50,34]}
+{"kind":"textbox","id":"sh/sze14fql","slide":13,"name":"s13-title-3","text":"测试先行","textPreview":"测试先行","textChars":4,"textLines":1,"bbox":[556,430,180,42]}
+{"kind":"textbox","id":"sh/ry50bap0","slide":13,"name":"s13-body-3","text":"把假设变成回归","textPreview":"把假设变成回归","textChars":7,"textLines":1,"bbox":[556,486,190,66]}
+{"kind":"shape","id":"sh/6xwj258f","slide":13,"name":"s13-dot-4","bbox":[820,345,50,50]}
+{"kind":"textbox","id":"sh/5wni907a","slide":13,"name":"s13-num-4","text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[820,352,50,34]}
+{"kind":"textbox","id":"sh/4vuh0fqp","slide":13,"name":"s13-title-4","text":"门禁推进","textPreview":"门禁推进","textChars":4,"textLines":1,"bbox":[796,430,180,42]}
+{"kind":"textbox","id":"sh/wri9cz2h","slide":13,"name":"s13-body-4","text":"哈希 / 指标 / 可视化","textPreview":"哈希 / 指标 / 可视化","textChars":13,"textLines":1,"bbox":[796,486,190,66]}
+{"kind":"shape","id":"sh/hsra54j2","slide":13,"name":"s13-dot-5","bbox":[1060,345,50,50]}
+{"kind":"textbox","id":"sh/up0ra9kr","slide":13,"name":"s13-num-5","text":"5","textPreview":"5","textChars":1,"textLines":1,"bbox":[1060,352,50,34]}
+{"kind":"textbox","id":"sh/vq9s3u1c","slide":13,"name":"s13-title-5","text":"证据交付","textPreview":"证据交付","textChars":4,"textLines":1,"bbox":[1036,430,180,42]}
+{"kind":"textbox","id":"sh/8ni98z2l","slide":13,"name":"s13-body-5","text":"报告 / 命令 / 限制","textPreview":"报告 / 命令 / 限制","textChars":12,"textLines":1,"bbox":[1036,486,190,66]}
+{"kind":"textbox","id":"sh/9ora14j6","slide":13,"name":"s13-takeaway","text":"Codex 的价值不是替你敲更多代码，而是持续维护一个可验证的工程状态。","textPreview":"Codex 的价值不是替你敲更多代码，而是持续维护一个可验证的工程状态。","textChars":36,"textLines":1,"bbox":[100,184,1080,84]}
+{"kind":"notes","id":"nt/031ask","slide":13,"text":""}
+{"kind":"slide","id":"sl/spapzw","slide":14,"title":"结论","textShapes":4}
+{"kind":"textbox","id":"sh/xwjylcrq","slide":14,"name":"s14-kicker","text":"结论","textPreview":"结论","textChars":2,"textLines":1,"bbox":[42,42,200,36]}
+{"kind":"textbox","id":"sh/at8faxsz","slide":14,"name":"s14-title","text":"把 Codex 放进\n有边界的工程闭环","textPreview":"把 Codex 放进 | 有边界的工程闭环","textChars":19,"textLines":2,"bbox":[42,174,1040,264]}
+{"kind":"textbox","id":"sh/vuhgj29k","slide":14,"name":"s14-body","text":"先定义不可破坏项\n用测试与可视化互证\n让失败可恢复、让结论可追溯","textPreview":"先定义不可破坏项 | 用测试与可视化互证 | 让失败可恢复、让结论可追溯","textChars":32,"textLines":3,"bbox":[42,516,650,130]}
+{"kind":"textbox","id":"sh/kzaxg7a1","slide":14,"name":"s14-action","text":"下一次训练：先执行 ext4 数据本地化，再测 DataLoader 参数","textPreview":"下一次训练：先执行 ext4 数据本地化，再测 DataLoader 参数","textChars":37,"textLines":1,"bbox":[760,556,450,80]}
+{"kind":"notes","id":"nt/spapzw","slide":14,"text":""}

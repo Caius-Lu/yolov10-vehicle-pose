@@ -1,0 +1,42 @@
+[
+  {
+    "count": 10,
+    "mean_ms": 8.545318508148194,
+    "std_ms": 0.17120891124336388,
+    "min_ms": 8.266752243041992,
+    "max_ms": 8.820735931396484,
+    "p50_ms": 8.557680130004883,
+    "p90_ms": 8.767283153533937,
+    "p95_ms": 8.79400954246521,
+    "p99_ms": 8.81539065361023,
+    "fps_from_mean": 117.02313951744136,
+    "mode": "torch_original",
+    "round": 1,
+    "device": "cuda:0",
+    "precision": "fp32",
+    "batch": 1,
+    "imgsz": 640,
+    "peak_allocated_bytes": 82648576,
+    "peak_reserved_bytes": 100663296
+  },
+  {
+    "count": 10,
+    "mean_ms": 6.414601564407349,
+    "std_ms": 0.18632255244840754,
+    "min_ms": 6.211679935455322,
+    "max_ms": 6.792895793914795,
+    "p50_ms": 6.367743968963623,
+    "p90_ms": 6.676140737533569,
+    "p95_ms": 6.734518265724182,
+    "p99_ms": 6.781220288276672,
+    "fps_from_mean": 155.8943279577476,
+    "mode": "torch_one2one_only",
+    "round": 1,
+    "device": "cuda:0",
+    "precision": "fp32",
+    "batch": 1,
+    "imgsz": 640,
+    "peak_allocated_bytes": 78653440,
+    "peak_reserved_bytes": 100663296
+  }
+]

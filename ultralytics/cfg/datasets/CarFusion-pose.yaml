@@ -1,0 +1,12 @@
+path: datasets/CarFusion/yolo_pose
+train: train.txt
+val: val.txt
+test: test.txt
+
+names:
+  0: vehicle
+
+kpt_shape: [14, 3]
+# Horizontal flip stays disabled until the 14-point left/right mapping is human-confirmed.
+flip_idx: []
+

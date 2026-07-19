@@ -1,0 +1,10 @@
+{
+  "status": "BLOCKED_BY_DATASET_AUTHORIZATION",
+  "bbox_mAP50": null,
+  "bbox_mAP50_95": null,
+  "pck_0_05": null,
+  "pck_0_10": null,
+  "nme": null,
+  "note": "No trained baseline or authorized validation data exists."
+}
+

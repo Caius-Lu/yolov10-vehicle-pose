@@ -3,6 +3,7 @@
 import contextlib
 from copy import deepcopy
 from pathlib import Path
+from types import SimpleNamespace
 
 import torch
 import torch.nn as nn
@@ -53,11 +54,20 @@ from ultralytics.nn.modules import (
     PSA,
     SCDown,
     RepVGGDW,
-    v10Detect
+    v10Detect,
+    v10Pose,
 )
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
-from ultralytics.utils.loss import v8ClassificationLoss, v8DetectionLoss, v8OBBLoss, v8PoseLoss, v8SegmentationLoss, v10DetectLoss
+from ultralytics.utils.loss import (
+    v8ClassificationLoss,
+    v8DetectionLoss,
+    v8OBBLoss,
+    v8PoseLoss,
+    v8SegmentationLoss,
+    v10DetectLoss,
+    v10PoseLoss,
+)
 from ultralytics.utils.plotting import feature_visualization
 from ultralytics.utils.torch_utils import (
     fuse_conv_and_bn,
@@ -302,7 +312,9 @@ class DetectionModel(BaseModel):
             s = 256  # 2x min stride
             m.inplace = self.inplace
             forward = lambda x: self.forward(x)[0] if isinstance(m, (Segment, Pose, OBB)) else self.forward(x)
-            if isinstance(m, v10Detect):
+            if isinstance(m, v10Pose):
+                forward = lambda x: self.forward(x)["one2many"][0]
+            elif isinstance(m, v10Detect):
                 forward = lambda x: self.forward(x)["one2many"]
             m.stride = torch.tensor([s / x.shape[-2] for x in forward(torch.zeros(1, ch, s, s))])  # forward
             self.stride = m.stride
@@ -645,6 +657,25 @@ class YOLOv10DetectionModel(DetectionModel):
     def init_criterion(self):
         return v10DetectLoss(self)
 
+
+class YOLOv10PoseModel(DetectionModel):
+    """YOLOv10 model with dual-assignment vehicle keypoint supervision."""
+
+    def __init__(self, cfg="yolov10n-vehicle-pose.yaml", ch=3, nc=None, data_kpt_shape=(None, None), verbose=True):
+        if not isinstance(cfg, dict):
+            cfg = yaml_model_load(cfg)
+        if any(data_kpt_shape) and list(data_kpt_shape) != list(cfg["kpt_shape"]):
+            LOGGER.info(f"Overriding model.yaml kpt_shape={cfg['kpt_shape']} with kpt_shape={data_kpt_shape}")
+            cfg["kpt_shape"] = list(data_kpt_shape)
+            cfg["head"][-1][3][1] = list(data_kpt_shape)
+        super().__init__(cfg=cfg, ch=ch, nc=nc, verbose=verbose)
+        self.kpt_shape = self.model[-1].kpt_shape
+        if not hasattr(self, "args"):
+            self.args = SimpleNamespace(**{**DEFAULT_CFG_DICT, "task": "pose"})
+
+    def init_criterion(self):
+        return v10PoseLoss(self)
+
 class Ensemble(nn.ModuleList):
     """Ensemble of models."""
 
@@ -720,6 +751,14 @@ def torch_safe_load(weight):
     """
     from ultralytics.utils.downloads import attempt_download_asset
 
+    def load_checkpoint(path):
+        # Official Ultralytics checkpoints contain serialized nn.Module objects. PyTorch 2.6 changed the default
+        # to weights_only=True, which rejects these trusted project checkpoints. Keep compatibility with older Torch.
+        try:
+            return torch.load(path, map_location="cpu", weights_only=False)
+        except TypeError:
+            return torch.load(path, map_location="cpu")
+
     check_suffix(file=weight, suffix=".pt")
     file = attempt_download_asset(weight)  # search online if missing locally
     try:
@@ -730,7 +769,7 @@ def torch_safe_load(weight):
                 "ultralytics.yolo.data": "ultralytics.data",
             }
         ):  # for legacy 8.0 Classify and Pose models
-            ckpt = torch.load(file, map_location="cpu")
+            ckpt = load_checkpoint(file)
 
     except ModuleNotFoundError as e:  # e.name is missing module name
         if e.name == "models":
@@ -750,7 +789,7 @@ def torch_safe_load(weight):
             f"run a command with an official YOLOv8 model, i.e. 'yolo predict model=yolov8n.pt'"
         )
         check_requirements(e.name)  # install missing module
-        ckpt = torch.load(file, map_location="cpu")
+        ckpt = load_checkpoint(file)
 
     if not isinstance(ckpt, dict):
         # File is likely a YOLO instance saved with i.e. torch.save(model, "saved_model.pt")
@@ -917,7 +956,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args = [ch[f]]
         elif m is Concat:
             c2 = sum(ch[x] for x in f)
-        elif m in {Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect}:
+        elif m in {Detect, WorldDetect, Segment, Pose, OBB, ImagePoolingAttn, v10Detect, v10Pose}:
             args.append([ch[x] for x in f])
             if m is Segment:
                 args[2] = make_divisible(min(args[2], max_channels) * width, 8)
@@ -1009,7 +1048,7 @@ def guess_model_task(model):
             return "detect"
         if m == "segment":
             return "segment"
-        if m == "pose":
+        if m in {"pose", "v10pose"}:
             return "pose"
         if m == "obb":
             return "obb"
@@ -1033,7 +1072,7 @@ def guess_model_task(model):
                 return "segment"
             elif isinstance(m, Classify):
                 return "classify"
-            elif isinstance(m, Pose):
+            elif isinstance(m, (Pose, v10Pose)):
                 return "pose"
             elif isinstance(m, OBB):
                 return "obb"

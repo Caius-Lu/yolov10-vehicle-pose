@@ -1,0 +1,11 @@
+{
+  "torch": "2.6.0+cu124",
+  "cuda": "12.4",
+  "cudnn": 90100,
+  "device": "NVIDIA GeForce RTX 3090 Ti",
+  "parameters": 4005986,
+  "checkpoint": "weights/yolov10n.pt",
+  "checkpoint_bytes": 11448431,
+  "one2one_max_abs_error": 0.0,
+  "warning": "Accuracy is not established unless checkpoint points to a completed CarFusion training run."
+}

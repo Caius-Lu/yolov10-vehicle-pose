@@ -1,0 +1,14 @@
+device: cuda:0
+imgsz: 640
+batch: 1
+warmup: 100
+iterations: 1000
+rounds: 3
+seed: 0
+max_det: 300
+correctness:
+  box_atol: 0.001
+  confidence_atol: 0.0001
+  keypoint_atol: 0.001
+  visibility_atol: 0.0001
+

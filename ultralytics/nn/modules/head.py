@@ -15,7 +15,7 @@ from .utils import bias_init_with_prob, linear_init
 import copy
 from ultralytics.utils import ops
 
-__all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "RTDETRDecoder"
+__all__ = "Detect", "Segment", "Pose", "Classify", "OBB", "RTDETRDecoder", "v10Detect", "v10Pose"
 
 
 class Detect(nn.Module):
@@ -533,3 +533,83 @@ class v10Detect(Detect):
         for a, b, s in zip(m.one2one_cv2, m.one2one_cv3, m.stride):  # from
             a[-1].bias.data[:] = 1.0  # box
             b[-1].bias.data[: m.nc] = math.log(5 / m.nc / (640 / s) ** 2)  # cls (.01 objects, 80 classes, 640 img)
+
+
+class v10Pose(v10Detect):
+    """YOLOv10 dual-assignment pose head with an NMS-free one-to-one inference path."""
+
+    def __init__(self, nc=1, kpt_shape=(14, 3), pose_head_channels=96, pose_head_depth=2, ch=()):
+        super().__init__(nc, ch)
+        if len(kpt_shape) != 2 or kpt_shape[0] <= 0 or kpt_shape[1] not in (2, 3):
+            raise ValueError(f"Invalid kpt_shape={kpt_shape}; expected [keypoint_count, 2|3]")
+        if pose_head_channels <= 0 or pose_head_depth <= 0:
+            raise ValueError("pose_head_channels and pose_head_depth must be positive")
+        self.kpt_shape = list(kpt_shape)
+        self.nk = self.kpt_shape[0] * self.kpt_shape[1]
+        self.pose_head_channels = pose_head_channels
+        self.pose_head_depth = pose_head_depth
+        self.one2one_only = False
+        self.cv4 = nn.ModuleList(self._pose_tower(x) for x in ch)
+        self.one2one_cv4 = copy.deepcopy(self.cv4)
+
+    def _pose_tower(self, input_channels):
+        layers = [Conv(input_channels, self.pose_head_channels, 3)]
+        layers.extend(Conv(self.pose_head_channels, self.pose_head_channels, 3) for _ in range(self.pose_head_depth - 1))
+        layers.append(nn.Conv2d(self.pose_head_channels, self.nk, 1))
+        return nn.Sequential(*layers)
+
+    def _forward_keypoints(self, features, towers):
+        batch_size = features[0].shape[0]
+        return torch.cat(
+            [towers[i](features[i]).view(batch_size, self.nk, -1) for i in range(self.nl)], dim=-1
+        )
+
+    def _decode_keypoints(self, batch_size, keypoints):
+        ndim = self.kpt_shape[1]
+        y = keypoints.view(batch_size, *self.kpt_shape, -1)
+        xy = (y[:, :, :2] * 2.0 + (self.anchors - 0.5)) * self.strides
+        if ndim == 3:
+            xy = torch.cat((xy, y[:, :, 2:3].sigmoid()), dim=2)
+        return xy.view(batch_size, self.nk, -1)
+
+    def _decode_branch(self, detections, keypoints):
+        decoded_detections = self.inference(detections)
+        dense_detections = decoded_detections if self.export else decoded_detections[0]
+        decoded_keypoints = self._decode_keypoints(dense_detections.shape[0], keypoints)
+        return torch.cat((dense_detections, decoded_keypoints), dim=1)
+
+    def forward(self, x):
+        one2one_features = [xi.detach() for xi in x]
+        one2one_detections = self.forward_feat(one2one_features, self.one2one_cv2, self.one2one_cv3)
+        one2one_keypoints = self._forward_keypoints(one2one_features, self.one2one_cv4)
+
+        run_one2many = self.training or (not self.export and not self.one2one_only)
+        one2many_detections = self.forward_feat(x, self.cv2, self.cv3) if run_one2many else None
+        one2many_keypoints = self._forward_keypoints(x, self.cv4) if run_one2many else None
+
+        if self.training:
+            return {
+                "one2many": (one2many_detections, one2many_keypoints),
+                "one2one": (one2one_detections, one2one_keypoints),
+            }
+
+        one2one_dense = self._decode_branch(one2one_detections, one2one_keypoints)
+        if self.export:
+            return ops.v10_pose_postprocess(
+                one2one_dense.permute(0, 2, 1), self.max_det, self.nc, self.kpt_shape
+            )
+
+        one2many = None
+        if run_one2many:
+            one2many_dense = self._decode_branch(one2many_detections, one2many_keypoints)
+            one2many = (one2many_dense, (one2many_detections, one2many_keypoints))
+        return {
+            "one2many": one2many,
+            "one2one": (one2one_dense, (one2one_detections, one2one_keypoints)),
+        }
+
+    def bias_init(self):
+        super().bias_init()
+        for towers in (self.cv4, self.one2one_cv4):
+            for tower in towers:
+                nn.init.zeros_(tower[-1].bias)

@@ -862,3 +862,24 @@ def v10postprocess(preds, max_det, nc=80):
     index = index // nc
     boxes = boxes.gather(dim=1, index=index.unsqueeze(-1).repeat(1, 1, boxes.shape[-1]))
     return boxes, scores, labels
+
+
+def v10_pose_postprocess(preds, max_det, nc=1, kpt_shape=(14, 3)):
+    """Select YOLOv10 top-k detections and gather keypoints from the same dense anchors."""
+    nk = int(kpt_shape[0]) * int(kpt_shape[1])
+    if preds.shape[-1] != 4 + nc + nk:
+        raise ValueError(f"Expected {4 + nc + nk} channels, got {preds.shape[-1]}")
+    boxes, scores, keypoints = preds.split((4, nc, nk), dim=-1)
+    candidates = min(max_det, scores.shape[1])
+    anchor_index = scores.amax(dim=-1).topk(candidates, dim=-1).indices.unsqueeze(-1)
+    boxes = boxes.gather(1, anchor_index.expand(-1, -1, 4))
+    scores = scores.gather(1, anchor_index.expand(-1, -1, nc))
+    keypoints = keypoints.gather(1, anchor_index.expand(-1, -1, nk))
+
+    count = min(max_det, scores.shape[1] * nc)
+    selected_scores, class_index = scores.flatten(1).topk(count, dim=-1)
+    labels = class_index % nc
+    candidate_index = class_index // nc
+    boxes = boxes.gather(1, candidate_index.unsqueeze(-1).expand(-1, -1, 4))
+    keypoints = keypoints.gather(1, candidate_index.unsqueeze(-1).expand(-1, -1, nk))
+    return torch.cat((boxes, selected_scores.unsqueeze(-1), labels.unsqueeze(-1).to(boxes.dtype), keypoints), dim=-1)

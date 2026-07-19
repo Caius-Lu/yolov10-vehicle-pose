@@ -1,0 +1,76 @@
+{
+  "checkpoint": "/home/caius/projects/yolopose/yolov10-vehicle-pose/vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt",
+  "source_list": "/home/caius/projects/yolopose/yolov10-vehicle-pose/reports/training/fixed_eval_images.txt",
+  "definition": "wall time from JPEG path input through decoded Results; batch=1",
+  "rounds": [
+    {
+      "count": 1000,
+      "mean_ms": 60.052859237,
+      "std_ms": 25.32898648748229,
+      "min_ms": 30.877426,
+      "max_ms": 220.194472,
+      "p50_ms": 52.4395125,
+      "p90_ms": 82.20854650000001,
+      "p95_ms": 109.88042039999999,
+      "p99_ms": 172.26272162999996,
+      "fps_from_mean": 16.651996469534893,
+      "round": 1,
+      "mode": "end_to_end",
+      "device": "cuda:0",
+      "imgsz": 640,
+      "batch": 1,
+      "sources": 100,
+      "component_means_ms": {
+        "preprocess_ms": 2.1449687480926514,
+        "inference_ms": 11.326045989990234,
+        "postprocess_ms": 1.7711727619171143
+      }
+    },
+    {
+      "count": 1000,
+      "mean_ms": 59.585647886,
+      "std_ms": 24.64156425604449,
+      "min_ms": 36.06579,
+      "max_ms": 262.808896,
+      "p50_ms": 52.153884500000004,
+      "p90_ms": 80.91409290000001,
+      "p95_ms": 109.71352599999993,
+      "p99_ms": 160.15920481999999,
+      "fps_from_mean": 16.78256485375828,
+      "round": 2,
+      "mode": "end_to_end",
+      "device": "cuda:0",
+      "imgsz": 640,
+      "batch": 1,
+      "sources": 100,
+      "component_means_ms": {
+        "preprocess_ms": 2.1629831790924072,
+        "inference_ms": 13.987396240234375,
+        "postprocess_ms": 1.7283403873443604
+      }
+    },
+    {
+      "count": 1000,
+      "mean_ms": 60.670330461999995,
+      "std_ms": 21.900298520855333,
+      "min_ms": 34.156499,
+      "max_ms": 189.695742,
+      "p50_ms": 53.7934765,
+      "p90_ms": 87.0664863,
+      "p95_ms": 108.16522694999995,
+      "p99_ms": 146.30651242,
+      "fps_from_mean": 16.482521067300528,
+      "round": 3,
+      "mode": "end_to_end",
+      "device": "cuda:0",
+      "imgsz": 640,
+      "batch": 1,
+      "sources": 100,
+      "component_means_ms": {
+        "preprocess_ms": 2.1799356937408447,
+        "inference_ms": 14.306129693984985,
+        "postprocess_ms": 1.8099405765533447
+      }
+    }
+  ]
+}
