@@ -1,211 +1,152 @@
-## Latest Updates -- [YOLOE: Real-Time Seeing Anything](https://github.com/THU-MIG/yoloe)
+# YOLOv10 Vehicle Pose：用 Codex 构建车辆关键点训练系统
 
-Please check out our new release on [**YOLOE**](https://github.com/THU-MIG/yoloe).
+基于 [THU-MIG/YOLOv10](https://github.com/THU-MIG/yolov10) 扩展的车辆检测与关键点训练系统，面向 CarFusion 单类车辆数据。项目覆盖数据转换与质检、14×3 Pose Head、训练门禁、断点恢复、精度评估、可视化验收、端到端性能分析及部门分享材料。
 
-* YOLOE code: https://github.com/THU-MIG/yoloe
-* YOLOE paper: https://arxiv.org/abs/2503.07465
+> 数据集不在本仓库中。代码、配置、测试、模型权重、实验报告、可视化结果、PPT、演讲稿和 Codex 提示词均已纳入版本管理。
 
- <p align="center">
-  <img src="https://github.com/THU-MIG/yoloe/blob/main/figures/comparison.svg" width=70%> <br>
-  Comparison of performance, training cost, and inference efficiency between YOLOE (Ours) and YOLO-Worldv2 in terms of open text prompts.
-</p>
+## 结果概览
 
-**YOLOE(ye)** is a highly **efficient**, **unified**, and **open** object detection and segmentation model for real-time seeing anything, like human eye, under different prompt mechanisms, like *texts*, *visual inputs*, and *prompt-free paradigm*, with **zero inference and transferring overhead** compared with closed-set YOLOs.
+训练环境为 WSL2 + RTX 3090 Ti，YOLOv10n Vehicle Pose，`imgsz=640`、`batch=16`、200 epochs。
 
-<p align="center">
-  <img src="https://github.com/THU-MIG/yoloe/blob/main/figures/visualization.svg" width=96%> <br>
-</p>
+| 指标 | 结果 |
+|---|---:|
+| 验证集 | 3,606 images / 11,569 instances |
+| Box mAP50 / mAP50-95 | 0.818 / 0.665 |
+| Pose mAP50 / mAP50-95 | 0.765 / 0.515 |
+| PCK@0.05 / PCK@0.10 | 0.6686 / 0.8525 |
+| NME | 0.05960 |
+| E 盘到 WSL ext4 端到端延迟 | 60.10 → 16.63 ms |
+| 系统吞吐提升 | 3.61×，不改变模型与精度 |
 
-<details>
-  <summary>
-  <font size="+1">Abstract</font>
-  </summary>
-Object detection and segmentation are widely employed in computer vision applications, yet conventional models like YOLO series, while efficient and accurate, are limited by predefined categories, hindering adaptability in open scenarios. Recent open-set methods leverage text prompts, visual cues, or prompt-free paradigm to overcome this, but often compromise between performance and efficiency due to high computational demands or deployment complexity. In this work, we introduce YOLOE, which integrates detection and segmentation across diverse open prompt mechanisms within a single highly efficient model, achieving real-time seeing anything. For text prompts, we propose Re-parameterizable Region-Text Alignment (RepRTA) strategy. It refines pretrained textual embeddings via a re-parameterizable lightweight auxiliary network and enhances visual-textual alignment with zero inference and transferring overhead. For visual prompts, we present Semantic-Activated Visual Prompt Encoder (SAVPE). It employs decoupled semantic and activation branches to bring improved visual embedding and accuracy with minimal complexity. For prompt-free scenario, we introduce Lazy Region-Prompt Contrast (LRPC) strategy. It utilizes a built-in large vocabulary and specialized embedding to identify all objects, avoiding costly language model dependency. Extensive experiments show YOLOE's exceptional zero-shot performance and transferability with high inference efficiency and low training cost. Notably, on LVIS, with $3\times$ less training cost and $1.4\times$ inference speedup, YOLOE-v8-S surpasses YOLO-Worldv2-S by 3.5 AP. When transferring to COCO, YOLOE-v8-L achieves 0.6 $AP^b$ and 0.4 $AP^m$ gains over closed-set YOLOv8-L with nearly $4\times$ less training time.
-</details>
-<p></p>
-<p align="center">
-  <img src="https://github.com/THU-MIG/yoloe/blob/main/figures/pipeline.svg" width=96%> <br>
-</p>
+完整验收结论见 [reports/09_final_acceptance.md](reports/09_final_acceptance.md)。
 
+![训练曲线](reports/training/final_assets/results.png)
 
-# [YOLOv10: Real-Time End-to-End Object Detection](https://arxiv.org/abs/2405.14458)
+## 系统流程
 
-
-Official PyTorch implementation of **YOLOv10**. NeurIPS 2024.
-
-<p align="center">
-  <img src="figures/latency.svg" width=48%>
-  <img src="figures/params.svg" width=48%> <br>
-  Comparisons with others in terms of latency-accuracy (left) and size-accuracy (right) trade-offs.
-</p>
-
-[YOLOv10: Real-Time End-to-End Object Detection](https://arxiv.org/abs/2405.14458).\
-Ao Wang, Hui Chen, Lihao Liu, Kai Chen, Zijia Lin, Jungong Han, and Guiguang Ding\
-[![arXiv](https://img.shields.io/badge/arXiv-2405.14458-b31b1b.svg)](https://arxiv.org/abs/2405.14458) <a href="https://colab.research.google.com/github/roboflow-ai/notebooks/blob/main/notebooks/train-yolov10-object-detection-on-custom-dataset.ipynb#scrollTo=SaKTSzSWnG7s"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"></a> [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-blue)](https://huggingface.co/collections/jameslahm/yolov10-665b0d90b0b5bb85129460c2) [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/jameslahm/YOLOv10)  [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/kadirnar/Yolov10)  [![Transformers.js Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Transformers.js-blue)](https://huggingface.co/spaces/Xenova/yolov10-web) [![LearnOpenCV](https://img.shields.io/badge/BlogPost-blue?logo=data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAMAAAC67D%2BPAAAALVBMVEX%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F6%2Bfn6%2Bvq3y%2BJ8rOFSne9Jm%2FQcOlr5DJ7GAAAAB3RSTlMAB2LM94H1yMxlvwAAADNJREFUCFtjZGAEAob%2FQMDIyAJl%2FmFkYmEGM%2F%2F%2BYWRmYWYCMv8BmSxYmUgKkLQhGYawAgApySgfFDPqowAAAABJRU5ErkJggg%3D%3D&logoColor=black&labelColor=gray)](https://learnopencv.com/yolov10/) [![Openbayes Demo](https://img.shields.io/static/v1?label=Demo&message=OpenBayes%E8%B4%9D%E5%BC%8F%E8%AE%A1%E7%AE%97&color=green)](https://openbayes.com/console/public/tutorials/im29uYrnIoz) 
-
-
-<details>
-  <summary>
-  <font size="+1">Abstract</font>
-  </summary>
-Over the past years, YOLOs have emerged as the predominant paradigm in the field of real-time object detection owing to their effective balance between computational cost and detection performance. Researchers have explored the architectural designs, optimization objectives, data augmentation strategies, and others for YOLOs, achieving notable progress. However, the reliance on the non-maximum suppression (NMS) for post-processing hampers the end-to-end deployment of YOLOs and adversely impacts the inference latency. Besides, the design of various components in YOLOs lacks the comprehensive and thorough inspection, resulting in noticeable computational redundancy and limiting the model's capability. It renders the suboptimal efficiency, along with considerable potential for performance improvements. In this work, we aim to further advance the performance-efficiency boundary of YOLOs from both the post-processing and the model architecture. To this end, we first present the consistent dual assignments for NMS-free training of YOLOs, which brings the competitive performance and low inference latency simultaneously. Moreover, we introduce the holistic efficiency-accuracy driven model design strategy for YOLOs. We comprehensively optimize various components of YOLOs from both the efficiency and accuracy perspectives, which greatly reduces the computational overhead and enhances the capability. The outcome of our effort is a new generation of YOLO series for real-time end-to-end object detection, dubbed YOLOv10. Extensive experiments show that YOLOv10 achieves the state-of-the-art performance and efficiency across various model scales. For example, our YOLOv10-S is 1.8$\times$ faster than RT-DETR-R18 under the similar AP on COCO, meanwhile enjoying 2.8$\times$ smaller number of parameters and FLOPs. Compared with YOLOv9-C, YOLOv10-B has 46\% less latency and 25\% fewer parameters for the same performance.
-</details>
-
-## Notes
-- 2024/05/31: Please use the [exported format](https://github.com/THU-MIG/yolov10?tab=readme-ov-file#export) for benchmark. In the non-exported format, e.g., pytorch, the speed of YOLOv10 is biased because the unnecessary `cv2` and `cv3` operations in the `v10Detect` are executed during inference.
-- 2024/05/30: We provide [some clarifications and suggestions](https://github.com/THU-MIG/yolov10/issues/136) for detecting smaller objects or objects in the distance with YOLOv10. Thanks to [SkalskiP](https://github.com/SkalskiP)!
-- 2024/05/27: We have updated the [checkpoints](https://huggingface.co/collections/jameslahm/yolov10-665b0d90b0b5bb85129460c2) with class names, for ease of use.
-
-## UPDATES 🔥
-- 2024/06/01: Thanks to [ErlanggaYudiPradana](https://github.com/rlggyp) for the integration with [C++ | OpenVINO | OpenCV](https://github.com/rlggyp/YOLOv10-OpenVINO-CPP-Inference)
-- 2024/06/01: Thanks to [NielsRogge](https://github.com/NielsRogge) and [AK](https://x.com/_akhaliq) for hosting the models on the HuggingFace Hub!
-- 2024/05/31: Build [yolov10-jetson](https://github.com/Seeed-Projects/jetson-examples/blob/main/reComputer/scripts/yolov10/README.md) docker image by [youjiang](https://github.com/yuyoujiang)!
-- 2024/05/31: Thanks to [mohamedsamirx](https://github.com/mohamedsamirx) for the integration with [BoTSORT, DeepOCSORT, OCSORT, HybridSORT, ByteTrack, StrongSORT using BoxMOT library](https://colab.research.google.com/drive/1-QV2TNfqaMsh14w5VxieEyanugVBG14V?usp=sharing)!
-- 2024/05/31: Thanks to [kaylorchen](https://github.com/kaylorchen) for the integration with [rk3588](https://github.com/kaylorchen/rk3588-yolo-demo)!
-- 2024/05/30: Thanks to [eaidova](https://github.com/eaidova) for the integration with [OpenVINO™](https://github.com/openvinotoolkit/openvino_notebooks/blob/0ba3c0211bcd49aa860369feddffdf7273a73c64/notebooks/yolov10-optimization/yolov10-optimization.ipynb)!
-- 2024/05/29: Add the gradio demo for running the models locally. Thanks to [AK](https://x.com/_akhaliq)!
-- 2024/05/27: Thanks to [sujanshresstha](sujanshresstha) for the integration with [DeepSORT](https://github.com/sujanshresstha/YOLOv10_DeepSORT.git)!
-- 2024/05/26: Thanks to [CVHub520](https://github.com/CVHub520) for the integration into [X-AnyLabeling](https://github.com/CVHub520/X-AnyLabeling)!
-- 2024/05/26: Thanks to [DanielSarmiento04](https://github.com/DanielSarmiento04) for integrate in [c++ | ONNX | OPENCV](https://github.com/DanielSarmiento04/yolov10cpp)!
-- 2024/05/25: Add [Transformers.js demo](https://huggingface.co/spaces/Xenova/yolov10-web) and onnx weights(yolov10[n](https://huggingface.co/onnx-community/yolov10n)/[s](https://huggingface.co/onnx-community/yolov10s)/[m](https://huggingface.co/onnx-community/yolov10m)/[b](https://huggingface.co/onnx-community/yolov10b)/[l](https://huggingface.co/onnx-community/yolov10l)/[x](https://huggingface.co/onnx-community/yolov10x)). Thanks to [xenova](https://github.com/xenova)!
-- 2024/05/25: Add [colab demo](https://colab.research.google.com/github/roboflow-ai/notebooks/blob/main/notebooks/train-yolov10-object-detection-on-custom-dataset.ipynb#scrollTo=SaKTSzSWnG7s), [HuggingFace Demo](https://huggingface.co/spaces/kadirnar/Yolov10), and [HuggingFace Model Page](https://huggingface.co/kadirnar/Yolov10). Thanks to [SkalskiP](https://github.com/SkalskiP) and [kadirnar](https://github.com/kadirnar)! 
-
-## Performance
-COCO
-
-| Model | Test Size | #Params | FLOPs | AP<sup>val</sup> | Latency |
-|:---------------|:----:|:---:|:--:|:--:|:--:|
-| [YOLOv10-N](https://huggingface.co/jameslahm/yolov10n) |   640  |     2.3M    |   6.7G   |     38.5%     | 1.84ms |
-| [YOLOv10-S](https://huggingface.co/jameslahm/yolov10s) |   640  |     7.2M    |   21.6G  |     46.3%     | 2.49ms |
-| [YOLOv10-M](https://huggingface.co/jameslahm/yolov10m) |   640  |     15.4M   |   59.1G  |     51.1%     | 4.74ms |
-| [YOLOv10-B](https://huggingface.co/jameslahm/yolov10b) |   640  |     19.1M   |  92.0G |     52.5%     | 5.74ms |
-| [YOLOv10-L](https://huggingface.co/jameslahm/yolov10l) |   640  |     24.4M   |  120.3G   |     53.2%     | 7.28ms |
-| [YOLOv10-X](https://huggingface.co/jameslahm/yolov10x) |   640  |     29.5M    |   160.4G   |     54.4%     | 10.70ms |
-
-## Installation
-`conda` virtual environment is recommended. 
-```
-conda create -n yolov10 python=3.9
-conda activate yolov10
-pip install -r requirements.txt
-pip install -e .
-```
-## Demo
-```
-python app.py
-# Please visit http://127.0.0.1:7860
+```mermaid
+flowchart LR
+    A[CarFusion 授权数据] --> B[转换与质量检查]
+    B --> C[Smoke 测试]
+    C --> D[32 图 Overfit]
+    D --> E[200 Epoch Baseline]
+    E --> F[指标评估]
+    F --> G[固定样本可视化门禁]
+    G --> H[端到端 Benchmark]
+    H --> I[WSL ext4 性能优化]
+    I --> J[报告与部门分享]
 ```
 
-## Validation
-[`yolov10n`](https://huggingface.co/jameslahm/yolov10n)  [`yolov10s`](https://huggingface.co/jameslahm/yolov10s)  [`yolov10m`](https://huggingface.co/jameslahm/yolov10m)  [`yolov10b`](https://huggingface.co/jameslahm/yolov10b)  [`yolov10l`](https://huggingface.co/jameslahm/yolov10l)  [`yolov10x`](https://huggingface.co/jameslahm/yolov10x)  
-```
-yolo val model=jameslahm/yolov10{n/s/m/b/l/x} data=coco.yaml batch=256
-```
+训练按 `smoke → overfit → baseline` 推进：先验证链路可运行，再验证模型能在小样本上学习，最后才投入完整训练。Codex 心跳负责定期读取实际进程、GPU、日志、epoch 与结果文件，遇到安全的项目内问题自动修复并续跑，避免重复任务。
 
-Or
-```python
-from ultralytics import YOLOv10
+## 主要改动
 
-model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
-# or
-# wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10{n/s/m/b/l/x}.pt
-model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
+- 原生 `14×3` 车辆关键点 Pose Head。
+- 保留 YOLOv10 one-to-many / one-to-one 双分配训练语义。
+- 推理使用 one-to-one NMS-free 路径。
+- CarFusion 确定性转换、分组切分、异常 bbox 策略与可视化质检。
+- PCK、NME、可见/遮挡、单关键点及车辆尺度分组指标。
+- 测试先行修复 predictor 的 `xywh → xyxy` 框缩放问题。
+- PyTorch model-only、端到端 benchmark 与 profiler。
+- 独立 WSL ext4 数据暂存方案，不修改 baseline 代码、权重或结果。
 
-model.val(data='coco.yaml', batch=256)
-```
+## 快速开始
 
-
-## Training 
-```
-yolo detect train data=coco.yaml model=yolov10n/s/m/b/l/x.yaml epochs=500 batch=256 imgsz=640 device=0,1,2,3,4,5,6,7
-```
-
-Or
-```python
-from ultralytics import YOLOv10
-
-model = YOLOv10()
-# If you want to finetune the model with pretrained weights, you could load the 
-# pretrained weights like below
-# model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
-# or
-# wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10{n/s/m/b/l/x}.pt
-# model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
-
-model.train(data='coco.yaml', epochs=500, batch=256, imgsz=640)
+```bash
+git clone git@github.com:Caius-Lu/yolov10-vehicle-pose.git
+cd yolov10-vehicle-pose
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pip install --no-build-isolation -e . pytest
 ```
 
-## Push to hub to 🤗
+仓库已包含官方 YOLOv10n 预训练权重和本项目的 baseline / 实验 checkpoint：
 
-Optionally, you can push your fine-tuned model to the [Hugging Face hub](https://huggingface.co/) as a public or private model:
+- `weights/yolov10n.pt`
+- `outputs/baseline_weights/best.pt`
+- `outputs/baseline_weights/last.pt`
+- `outputs/network_optimization/yolov10n_pose_distilled_512_3e_best.pt`
 
-```python
-# let's say you have fine-tuned a model for crop detection
-model.push_to_hub("<your-hf-username-or-organization/yolov10-finetuned-crop-detection")
+## 数据准备
 
-# you can also pass `private=True` if you don't want everyone to see your model
-model.push_to_hub("<your-hf-username-or-organization/yolov10-finetuned-crop-detection", private=True)
+CarFusion 数据需自行取得授权并放在本地或远程数据目录，禁止提交原始图片、标签归档、Token 或私密下载链接。
+
+```bash
+scripts/run_carfusion_pipeline.sh
 ```
 
-## Prediction
-Note that a smaller confidence threshold can be set to detect smaller objects or objects in the distance. Please refer to [here](https://github.com/THU-MIG/yolov10/issues/136) for details.
-```
-yolo predict model=jameslahm/yolov10{n/s/m/b/l/x}
-```
+该入口依次完成 COCO 整理、YOLO Pose 转换、质量检查、固定切分和预览生成。详细说明见 [docs/dataset.md](docs/dataset.md)。
 
-Or
-```python
-from ultralytics import YOLOv10
+## 训练与恢复
 
-model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
-# or
-# wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10{n/s/m/b/l/x}.pt
-model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
-
-model.predict()
+```bash
+scripts/train_vehicle_pose_smoke.sh
+scripts/train_vehicle_pose_overfit.sh
+scripts/train_vehicle_pose_full.sh
+scripts/resume_vehicle_pose.sh path/to/last.pt
 ```
 
-## Export
-```
-# End-to-End ONNX
-yolo export model=jameslahm/yolov10{n/s/m/b/l/x} format=onnx opset=13 simplify
-# Predict with ONNX
-yolo predict model=yolov10n/s/m/b/l/x.onnx
+最终 baseline 在 WSL 重启和 Windows E 盘临时丢失后，从 epoch 176 的 `last.pt` 恢复并完成 200 epochs，没有重启实验。训练证据见 [reports/training/06_baseline_report.md](reports/training/06_baseline_report.md)。
 
-# End-to-End TensorRT
-yolo export model=jameslahm/yolov10{n/s/m/b/l/x} format=engine half=True simplify opset=13 workspace=16
-# or
-trtexec --onnx=yolov10n/s/m/b/l/x.onnx --saveEngine=yolov10n/s/m/b/l/x.engine --fp16
-# Predict with TensorRT
-yolo predict model=yolov10n/s/m/b/l/x.engine
-```
+## 评估与可视化门禁
 
-Or
-```python
-from ultralytics import YOLOv10
+```bash
+.venv/bin/yolo pose val \
+  model=outputs/baseline_weights/best.pt \
+  data=ultralytics/cfg/datasets/CarFusion-pose.yaml \
+  device=0
 
-model = YOLOv10.from_pretrained('jameslahm/yolov10{n/s/m/b/l/x}')
-# or
-# wget https://github.com/THU-MIG/yolov10/releases/download/v1.1/yolov10{n/s/m/b/l/x}.pt
-model = YOLOv10('yolov10{n/s/m/b/l/x}.pt')
-
-model.export(...)
+.venv/bin/python scripts/evaluate_vehicle_pose.py \
+  --pairs-json reports/training/matched_pose_pairs.json
 ```
 
-## Acknowledgement
+固定样本会同时检查 GT、预测框、关键点和置信度。可视化门禁发现并修复了宽图上预测框过大的问题；修复后的代表性结果位于 [reports/visualization/review_boxfix](reports/visualization/review_boxfix)。
 
-The code base is built with [ultralytics](https://github.com/ultralytics/ultralytics) and [RT-DETR](https://github.com/lyuwenyu/RT-DETR).
+![可视化验收样本](reports/visualization/review_boxfix/4_30728.jpg)
 
-Thanks for the great implementations! 
+## 性能 Benchmark 与优化
 
-## Citation
-
-If our code or models help your work, please cite our paper:
-```BibTeX
-@article{wang2024yolov10,
-  title={YOLOv10: Real-Time End-to-End Object Detection},
-  author={Wang, Ao and Chen, Hui and Liu, Lihao and Chen, Kai and Lin, Zijia and Han, Jungong and Ding, Guiguang},
-  journal={arXiv preprint arXiv:2405.14458},
-  year={2024}
-}
+```bash
+scripts/benchmark_torch.sh --checkpoint outputs/baseline_weights/best.pt
+scripts/benchmark_end_to_end.sh --checkpoint outputs/baseline_weights/best.pt
+scripts/profile_torch.sh --checkpoint outputs/baseline_weights/best.pt
 ```
+
+当前首选优化不是蒸馏，而是将转换后的数据从 `/mnt/e` 暂存到 WSL Linux 文件系统：
+
+```bash
+scripts/stage_carfusion_to_wsl.sh \
+  datasets/CarFusion/yolo_pose \
+  /home/caius/datasets/CarFusion/yolo_pose \
+  reports/optimization/runtime_configs/CarFusion-pose-wsl.yaml
+```
+
+相同模型、权重、精度与 100 张固定图片下，端到端平均延迟从 60.10 ms 降至 16.63 ms。完整边界和证据见 [reports/optimization/08_final_recommendation.md](reports/optimization/08_final_recommendation.md)。蒸馏实验保留为研究记录，但因没有产生部署延迟收益而未作为推荐方案。
+
+## 测试
+
+```bash
+DEVICE=cuda:0 IMGSZ=640 scripts/validate_project.sh
+```
+
+最终远程验收中，全量 pytest 通过，Vehicle Pose 回归测试为 9/9。测试源码位于 [tests](tests)。
+
+## 文档与分享材料
+
+- [完整项目用法](README_VEHICLE_POSE.md)
+- [系统架构](docs/architecture.md)
+- [训练说明](docs/training.md)
+- [评估说明](docs/evaluation.md)
+- [性能优化说明](docs/optimization.md)
+- [Codex 构建训练系统部门分享底稿](docs/部门分享_从YOLOv10到车辆关键点训练系统.md)
+- [最终版 PPT](outputs/Codex构建YOLOPose训练系统_部门分享_最终版.pptx)
+- [完整演讲稿](outputs/Codex构建YOLOPose训练系统_完整演讲稿.md)
+- [Codex 提示词压缩包](yolov10_vehicle_pose_codex_prompts.zip)
+
+## 已知数据边界
+
+模型接口保持 `14×3`，但当前 CarFusion 源数据中关键点索引 13 在全部 62,434 个实例里可见性均为 0，因此只有 13 个点具备有效监督和评估证据。完整左右语义映射确认前，训练保持 `fliplr=0.0`。
+
+## 上游与许可证
+
+本项目基于 [YOLOv10](https://github.com/THU-MIG/yolov10) 和 Ultralytics 代码扩展。请同时遵守原项目许可证、CarFusion 数据授权条款及仓库中的 [LICENSE](LICENSE)。
