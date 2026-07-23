@@ -37,7 +37,8 @@ flowchart LR
 - `ultralytics/models/yolov10/prune_distill.py`：剪枝、输出蒸馏及 whole-model checkpoint；
 - `scripts/prune_vehicle_pose.py`：数据无关的结构剪枝入口；
 - `scripts/train_pose_pruned_distillation.py`：加载已变形学生并恢复训练；
-- `configs/pose_prune_distill.yaml`：独立实验配置；
+- `configs/pose_prune_distill.yaml`：20-epoch 研究配置；
+- `configs/pose_prune_distill_100e.yaml`：已经远程验证的 100-epoch、batch=64 配置；
 - `tests/test_pose_pruning_distillation.py`：结构与梯度边界；
 - `tests/test_pose_pruning_pipeline.py`：路径和配置安全边界。
 
@@ -64,11 +65,11 @@ flowchart LR
 
 `graph-imgsz=64` 只用于追踪全卷积网络的通道依赖和做一次前向检查，不代表训练或验证分辨率。训练、教师和最终评估仍为 640。默认不做额外 MAC 统计，避免在构图阶段重复执行高内存 profile；如确有需要可显式加 `--measure-macs`。参数减少是结构门禁，真实速度必须用现有 benchmark 测量。
 
-第二步做 20 epoch 的低学习率恢复蒸馏：
+第二步做恢复蒸馏。短周期研究使用原配置；复现本次完整实验使用 100-epoch 配置：
 
 ```bash
 .venv/bin/python scripts/train_pose_pruned_distillation.py \
-  --config configs/pose_prune_distill.yaml
+  --config configs/pose_prune_distill_100e.yaml
 ```
 
 学生继续接受真实 bbox、类别、14×3 关键点监督；教师只提供同分辨率 raw-output 软目标：DFL 分布 KL、分类/visibility 概率 MSE、关键点 XY SmoothL1。这样允许学生隐藏通道宽度变化，而最终输出语义保持一致。教师不注册为学生子模块，不进入 optimizer、EMA 或 checkpoint。
@@ -114,6 +115,37 @@ flowchart LR
 4. 只有 PyTorch 门禁通过，才导出 ONNX/TensorRT，并重新核对输出和精度；
 5. 把结构报告、训练配置、checkpoint SHA-256、指标和延迟结果存入新的 `reports/pruning/<experiment>/`，禁止覆盖已有结果。
 
-## 当前证据边界
+## 已完成的 100-epoch 远程验证
 
-仓库已完成剪枝/恢复蒸馏代码、保护层测试、梯度隔离测试、路径安全测试和快速单元测试。远程 11 项聚焦测试通过；一次 64×64、单张虚拟输入的真实 DepGraph smoke 在 90 秒资源上限内未完成并被终止，因此没有生成剪枝权重。尚未运行 CarFusion 剪枝恢复训练，本页不声明任何新的精度或延迟数字。首次真实剪枝也应作为受监控实验单独授权，不能当作无成本 smoke；后续完整实验需逐组运行。
+2026-07-23 至 2026-07-24 在 `wsl-dev` 的 RTX 3090 Ti 上完成了 15% 结构化剪枝与 batch=64、100 epoch 恢复蒸馏，训练用时 3.81 小时。依赖图实际选取 53 个保守根层，73 个 Conv 只允许被依赖传播调整，18 个最终输出层受保护。训练未发生 OOM 或非有限 loss。
+
+| 指标 | 200e baseline | 剪枝 + KD 100e | 变化 |
+|---|---:|---:|---:|
+| 参数量 | 4,005,986 | 3,350,666 | -16.36% |
+| checkpoint | 8.42 MB | 7.06 MB | -16.20% |
+| Box mAP50-95 | 0.66761 | 0.57041 | -0.09720 |
+| Pose mAP50-95 | 0.51455 | 0.41532 | -0.09923 |
+| PCK@0.05 | 0.66863 | 0.60902 | -0.05960 |
+| PCK@0.10 | 0.85248 | 0.81319 | -0.03930 |
+| NME | 0.05960 | 0.07291 | +0.01331 |
+| fused FP16 latency | 5.7010 ms | 5.6819 ms | -0.34% |
+
+计时严格使用同一设备、batch=1、640、one-to-one-only、Conv/BN fuse、FP16、100 次 warmup、1000 次计时和 3 轮平均。剪枝候选自身从 FP32 切换到 FP16 的加速不等于剪枝收益；部署决策看的是两个模型各自 fused FP16 的横向比较。
+
+结果只通过参数量门禁，精度与 latency 门禁失败，因此不能替换 baseline。完整原始证据在：
+
+- `reports/pruning/r2/prune15_structure_20260723.json`
+- `reports/pruning/r2/results.csv`
+- `reports/pruning/r2/vehicle_pose_metrics.json`
+- `reports/pruning/r2/comparison.json`
+- `reports/benchmark/prune15_kd100_r2/`
+
+训练曲线显示 Box/Pose/PCK 分别在 epoch 14、24、30–31 左右达到最佳，之后训练 loss 仍下降而验证指标不再改善。因此“再增加 epoch”不是当前证据支持的修复。第二阶段应优先保护 Pose/Detect head 的敏感根层、使用分层剪枝率和硬件友好的通道对齐，并在独立配置和输出目录中先通过小规模精度与延迟门禁。
+
+## 失败恢复与安全边界
+
+1. 每个实验使用唯一 `name`、PID、日志和输出目录，存活时禁止重复启动；
+2. OOM 时只降低 batch 并新建 run，不复用半写入目录；
+3. whole-model checkpoint 只能加载本仓库自产且来源可信的文件；
+4. baseline 权重、数据 YAML、转换后数据和既有报告全部只读；
+5. 若参数减少但 latency 无改善，立即判定部署收益失败；若精度恢复但 latency 失败，也不得推荐上线。

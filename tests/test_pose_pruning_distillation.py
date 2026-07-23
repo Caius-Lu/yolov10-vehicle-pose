@@ -9,8 +9,11 @@ import torch
 from ultralytics.models.yolov10.prune_distill import (
     OutputDistillationConfig,
     PruningConfig,
+    build_pruned_checkpoint,
     build_pruning_report,
     collect_head_output_layers,
+    collect_ignored_root_layers,
+    collect_prunable_root_layers,
     count_parameters,
     pose_output_distillation_loss,
     upgrade_for_pruning_distillation,
@@ -122,6 +125,18 @@ def test_all_detection_and_pose_output_convolutions_are_protected():
     assert {layer.out_channels for layer in protected} == {head.reg_max * 4, head.nc, head.nk}
 
 
+def test_only_conservative_convolutions_are_available_as_pruning_roots():
+    model = YOLOv10PoseModel(POSE_CFG, verbose=False)
+    roots = collect_prunable_root_layers(model)
+
+    ignored = collect_ignored_root_layers(model, roots)
+
+    all_convolutions = {module for module in model.modules() if isinstance(module, torch.nn.Conv2d)}
+    assert set(roots).isdisjoint(ignored)
+    assert set(roots) | set(ignored) == all_convolutions
+    assert set(collect_head_output_layers(model.model[-1])).issubset(ignored)
+
+
 def test_pruning_report_requires_real_structural_reduction():
     baseline = torch.nn.Sequential(torch.nn.Conv2d(3, 8, 3), torch.nn.Conv2d(8, 4, 1))
     pruned = torch.nn.Sequential(torch.nn.Conv2d(3, 4, 3), torch.nn.Conv2d(4, 4, 1))
@@ -164,3 +179,16 @@ def test_checkpoint_copy_drops_pruning_distillation_teacher():
 
     assert checkpoint_copy.distillation_teacher is None
     assert checkpoint_copy.distillation_config is None
+
+
+def test_pruned_checkpoint_drops_stale_loss_criterion_before_recovery_training():
+    model = YOLOv10PoseModel(POSE_CFG, verbose=False)
+    model.criterion = object()
+
+    checkpoint = build_pruned_checkpoint(
+        model,
+        source_checkpoint="baseline.pt",
+        report={"parameters_before": 2, "parameters_after": 1},
+    )
+
+    assert not hasattr(checkpoint["model"], "criterion")

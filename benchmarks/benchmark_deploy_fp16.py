@@ -8,15 +8,19 @@ from pathlib import Path
 
 import torch
 
-from ultralytics import YOLOv10
+from ultralytics.nn.tasks import attempt_load_one_weight
 
-from benchmark_torch import describe, measure
+try:
+    from benchmarks.benchmark_torch import describe, measure
+except ModuleNotFoundError:  # Direct execution: python benchmarks/benchmark_deploy_fp16.py
+    from benchmark_torch import describe, measure
 
 
 def build_model(checkpoint, device, half=False, fuse=False):
-    wrapper = YOLOv10("ultralytics/cfg/models/v10/yolov10n-vehicle-pose.yaml", task="pose")
-    wrapper.load(checkpoint)
-    model = wrapper.model.to(device).eval()
+    # Structural pruning changes module widths, so rebuilding the YAML graph and
+    # intersecting a state_dict would silently lose the pruned architecture.
+    model, _ = attempt_load_one_weight(checkpoint, device=device, fuse=False)
+    model = model.to(device).eval()
     if fuse:
         model.fuse()
     if half:

@@ -1,0 +1,60 @@
+{
+  "experiment": "carfusion_yolov10n_prune15_kd_640_bs64_100e_20260723_r2",
+  "comparison_baseline": "carfusion_baseline_yolov10n_e_drive_20260718_200e",
+  "protocol": {
+    "validation_images": 3606,
+    "imgsz": 640,
+    "benchmark_device": "NVIDIA GeForce RTX 3090 Ti",
+    "benchmark_mode": "batch=1, one-to-one-only, Conv/BN fuse, FP16, 100 warmup, 1000 timed iterations, 3 rounds"
+  },
+  "baseline": {
+    "parameters": 4005986,
+    "checkpoint_bytes": 8422070,
+    "box_map50_95": 0.66761,
+    "pose_map50_95": 0.51455,
+    "pck_005": 0.6686265836,
+    "pck_010": 0.8524834104,
+    "nme": 0.0595995273,
+    "fused_fp16_latency_ms": 5.701039431413015
+  },
+  "pruned_kd100": {
+    "parameters": 3350666,
+    "checkpoint_bytes": 7057777,
+    "box_map50_95": 0.57041,
+    "pose_map50_95": 0.41532,
+    "pck_005": 0.6090234868046561,
+    "pck_010": 0.8131862692526626,
+    "nme": 0.07291446569480167,
+    "fused_fp16_latency_ms": 5.681913910388946,
+    "training_hours": 3.81,
+    "best_epochs": {
+      "box_map50_95": 14,
+      "pose_map50_95": 24,
+      "pck_005": 31,
+      "pck_010": 30,
+      "nme": 30
+    }
+  },
+  "delta_pruned_minus_baseline": {
+    "parameters": -655320,
+    "parameter_reduction_pct": 16.358519475604757,
+    "checkpoint_reduction_pct": 16.19902233061468,
+    "box_map50_95": -0.0972,
+    "pose_map50_95": -0.09923,
+    "pck_005": -0.059603096795343924,
+    "pck_010": -0.0392971411473374,
+    "nme": 0.013314938394801669,
+    "fused_fp16_latency_ms": -0.01912552102406906,
+    "fused_fp16_latency_reduction_pct": 0.33547428068443924
+  },
+  "gates": {
+    "parameter_reduction_at_least_10pct": true,
+    "latency_reduction_at_least_10pct": false,
+    "pose_map50_95_drop_at_most_0005": false,
+    "pck_005_drop_at_most_0005": false,
+    "pck_010_drop_at_most_0002": false,
+    "nme_increase_at_most_0001": false,
+    "deployment_recommendation": false
+  },
+  "conclusion": "The 15% structured-pruning candidate reduces physical parameters and checkpoint size, but fails both accuracy and measured deployment-latency gates. Keep the 200-epoch baseline as the deployment candidate."
+}

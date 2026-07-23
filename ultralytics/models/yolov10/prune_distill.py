@@ -143,6 +143,20 @@ def collect_prunable_root_layers(model):
     return unique
 
 
+def collect_ignored_root_layers(model, roots):
+    """Return convolutions that may be adjusted as dependencies but cannot start a pruning group.
+
+    Torch-Pruning otherwise enumerates every convolution as a candidate root,
+    even when its configured ratio is zero. YOLOv10 Pose contains many coupled
+    internal and depthwise convolutions, so enumerating those groups wastes
+    substantial host memory. Ignoring them as *roots* still permits input
+    channels to be adjusted when a selected conservative root is pruned.
+    """
+
+    root_ids = {id(layer) for layer in roots}
+    return [module for module in model.modules() if isinstance(module, nn.Conv2d) and id(module) not in root_ids]
+
+
 def _load_pruning_backend():
     try:
         import torch_pruning as tp
@@ -166,6 +180,7 @@ def structurally_prune_model(model, example_input, config=None, pruning_backend=
     roots = collect_prunable_root_layers(model)
     if not roots:
         raise RuntimeError("no conservative pruning roots were found")
+    ignored_roots = collect_ignored_root_layers(model, roots)
 
     parameters_before = count_parameters(model)
     # Ultralytics inference loading prefers EMA weights, whose parameters are
@@ -202,7 +217,10 @@ def structurally_prune_model(model, example_input, config=None, pruning_backend=
         pruning_ratio_dict={layer: config.pruning_ratio for layer in roots},
         iterative_steps=config.iterative_steps,
         global_pruning=config.global_pruning,
-        ignored_layers=protected,
+        # MetaPruner scans every Conv2d group even when its ratio is zero.
+        # Restrict root enumeration to the explicitly selected conservative
+        # layers; ignored convolutions can still receive coupled input pruning.
+        ignored_layers=ignored_roots,
         round_to=config.round_to,
         root_module_types=[nn.Conv2d],
     )
@@ -222,6 +240,7 @@ def structurally_prune_model(model, example_input, config=None, pruning_backend=
         parameters_after,
         pruning_config=asdict(config),
         prunable_root_count=len(roots),
+        ignored_root_count=len(ignored_roots),
         protected_output_count=len(protected),
         macs_before=float(macs_before) if macs_before is not None else None,
         macs_after=float(macs_after) if macs_after is not None else None,
@@ -408,6 +427,11 @@ def build_pruned_checkpoint(model, source_checkpoint, report):
     """Create an Ultralytics-compatible whole-model checkpoint for changed shapes."""
 
     checkpoint_model = deepcopy(model).half()
+    # Loss objects may contain ordinary (unregistered) tensors created on the
+    # pruning device. Recovery training must rebuild the criterion after the
+    # student has moved to its training device.
+    if hasattr(checkpoint_model, "criterion"):
+        del checkpoint_model.criterion
     checkpoint_model.zero_grad(set_to_none=True)
     return {
         "epoch": -1,

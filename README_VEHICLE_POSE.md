@@ -101,11 +101,28 @@ scripts/profile_torch.sh --checkpoint vehicle_pose_runs/baseline/weights/best.pt
 
 正式结果采用 batch=1、warmup=100、iterations=1000、独立三轮，并分别报告 model-only 与 end-to-end。
 
-## 9. Fast / Balanced / Accurate
+## 9. 结构化剪枝与恢复蒸馏（独立实验）
+
+安装可选依赖后，先生成物理改宽的学生模型，再启动恢复蒸馏：
+
+```bash
+.venv/bin/python -m pip install --no-deps -r requirements-pruning.txt
+.venv/bin/python scripts/prune_vehicle_pose.py \
+  --checkpoint vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt \
+  --output outputs/pruning/yolov10n_pose_pruned15_init_20260723.pt \
+  --report reports/pruning/prune15_structure_20260723.json \
+  --graph-imgsz 64 --pruning-ratio 0.15 --round-to 8 --device cuda
+.venv/bin/python scripts/train_pose_pruned_distillation.py \
+  --config configs/pose_prune_distill_100e.yaml
+```
+
+验证必须与 200-epoch baseline 使用相同数据、640 输入和指标定义；延迟必须用 batch=1、one-to-one-only、Conv/BN fuse、FP16 的同机口径横向比较。已经完成的 100-epoch 实验减少 16.36% 参数，但 Pose mAP50-95 下降 0.09923，FP16 latency 仅改善 0.34%，因此不进入部署推荐。详细结果、失败恢复和 whole-model checkpoint 安全边界见 [docs/pruning_distillation.md](docs/pruning_distillation.md)。
+
+## 10. Fast / Balanced / Accurate
 
 真实 baseline 训练、正式 benchmark 与消融完成前不会生成虚假版本。后续复现入口预留为 `scripts/reproduce_fast.sh`、`reproduce_balanced.sh`、`reproduce_accurate.sh`。
 
-## 10. 总验收
+## 11. 总验收
 
 ```bash
 DEVICE=cuda:0 IMGSZ=640 scripts/validate_project.sh

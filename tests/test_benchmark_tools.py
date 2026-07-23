@@ -1,7 +1,9 @@
 from pathlib import Path
 
 import pytest
+import torch
 
+from benchmarks.benchmark_deploy_fp16 import build_model
 from benchmarks.benchmark_end_to_end import load_sources
 from benchmarks.benchmark_torch import describe
 from scripts.build_training_manifest import build_manifest
@@ -25,6 +27,37 @@ def test_benchmark_describe_reports_tail_latency():
     assert summary["mean_ms"] == 3.0
     assert summary["p50_ms"] == 3.0
     assert summary["p95_ms"] == 4.8
+
+
+def test_deploy_benchmark_loads_whole_model_checkpoint(monkeypatch):
+    class PrunedCheckpointModel(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.weight = torch.nn.Parameter(torch.ones(1))
+            self.fused = False
+
+        def fuse(self):
+            self.fused = True
+            return self
+
+    checkpoint_model = PrunedCheckpointModel()
+    calls = []
+
+    def fake_attempt_load_one_weight(checkpoint, device=None, fuse=False):
+        calls.append((checkpoint, device, fuse))
+        return checkpoint_model, {"pruning": {"parameters_after": 1}}
+
+    monkeypatch.setattr(
+        "benchmarks.benchmark_deploy_fp16.attempt_load_one_weight",
+        fake_attempt_load_one_weight,
+    )
+
+    loaded = build_model("pruned.pt", torch.device("cpu"), half=True, fuse=True)
+
+    assert loaded is checkpoint_model
+    assert calls == [("pruned.pt", torch.device("cpu"), False)]
+    assert loaded.fused is True
+    assert loaded.weight.dtype == torch.float16
 
 
 def test_training_manifest_hashes_configs_and_dataset_summaries(tmp_path):

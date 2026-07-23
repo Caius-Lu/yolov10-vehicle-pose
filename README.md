@@ -133,7 +133,7 @@ scripts/stage_carfusion_to_wsl.sh \
 .venv/bin/python scripts/train_pose_pruned_distillation.py --config configs/pose_prune_distill.yaml
 ```
 
-具体实现、实验梯度和止损边界见 [docs/pruning_distillation.md](docs/pruning_distillation.md)。当前只交付代码与轻量测试，没有运行新的完整训练，也没有新增精度/耗时结论。
+具体实现、复现命令、实验梯度和止损边界见 [docs/pruning_distillation.md](docs/pruning_distillation.md)。15% 剪枝 + 100-epoch 恢复蒸馏已经在 RTX 3090 Ti 上完成：参数量减少 16.36%，但 Pose mAP50-95 从 0.51455 降至 0.41532，同口径 fused FP16 延迟仅从 5.7010 ms 降至 5.6819 ms（0.34%）。因此该候选未通过精度和延迟门禁，不替换 200-epoch baseline。完整证据见 [第一阶段报告](reports/pruning/r2/first_stage_report.md)。
 
 ## 测试
 
