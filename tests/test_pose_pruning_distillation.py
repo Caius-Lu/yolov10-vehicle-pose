@@ -59,6 +59,7 @@ def _training_batch():
 def test_pruning_config_rejects_destructive_or_invalid_settings():
     config = PruningConfig(pruning_ratio=0.15, iterative_steps=1, round_to=8)
     assert config.pruning_ratio == 0.15
+    assert config.head_pruning_ratio is None
     assert config.measure_macs is False
     for ratio in (0.0, -0.1, 0.5, 1.0):
         with pytest.raises(ValueError, match="pruning_ratio"):
@@ -67,6 +68,10 @@ def test_pruning_config_rejects_destructive_or_invalid_settings():
         PruningConfig(pruning_ratio=0.15, iterative_steps=0)
     with pytest.raises(ValueError, match="round_to"):
         PruningConfig(pruning_ratio=0.15, round_to=0)
+    with pytest.raises(ValueError, match="head_pruning_ratio"):
+        PruningConfig(pruning_ratio=0.15, head_pruning_ratio=-0.01)
+    with pytest.raises(ValueError, match="head_pruning_ratio"):
+        PruningConfig(pruning_ratio=0.15, head_pruning_ratio=0.5)
 
 
 def test_output_distillation_config_validates_weights_and_resolution():
@@ -135,6 +140,18 @@ def test_only_conservative_convolutions_are_available_as_pruning_roots():
     assert set(roots).isdisjoint(ignored)
     assert set(roots) | set(ignored) == all_convolutions
     assert set(collect_head_output_layers(model.model[-1])).issubset(ignored)
+
+
+def test_head_hidden_roots_can_be_fully_protected_for_accuracy_repair():
+    model = YOLOv10PoseModel(POSE_CFG, verbose=False)
+    all_roots = collect_prunable_root_layers(model)
+    protected_head_roots = collect_prunable_root_layers(model, include_head_hidden=False)
+    head_hidden = set(all_roots) - set(protected_head_roots)
+
+    assert head_hidden
+    assert set(protected_head_roots).issubset(all_roots)
+    assert head_hidden.isdisjoint(protected_head_roots)
+    assert head_hidden.issubset(set(collect_ignored_root_layers(model, protected_head_roots)))
 
 
 def test_pruning_report_requires_real_structural_reduction():

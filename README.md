@@ -135,6 +135,8 @@ scripts/stage_carfusion_to_wsl.sh \
 
 具体实现、复现命令、实验梯度和止损边界见 [docs/pruning_distillation.md](docs/pruning_distillation.md)。15% 剪枝 + 100-epoch 恢复蒸馏已经在 RTX 3090 Ti 上完成：参数量减少 16.36%，但 Pose mAP50-95 从 0.51455 降至 0.41532，同口径 fused FP16 延迟仅从 5.7010 ms 降至 5.6819 ms（0.34%）。因此该候选未通过精度和延迟门禁，不替换 200-epoch baseline。完整证据见 [第一阶段报告](reports/pruning/r2/first_stage_report.md)。
 
+第二阶段根据曲线和根层分布新增 Head 独立保护：Backbone/Neck 20%、Head 0%、`round_to=16`。该候选只减少 4.71% 参数，fused FP16 延迟反而增加 3.89%，在训练前门禁即停止，未启动无部署价值的长训。详见 [第二阶段报告](reports/pruning/repair_head_protected/second_stage_report.md)。
+
 ## 测试
 
 ```bash

@@ -618,29 +618,31 @@ Torch-Pruning 的关键价值是依赖传播。例如剪掉某个卷积的第 k 
 
 知道损失和梯度以后，最后一页看 100 epoch 的真实曲线，以及为什么“继续加 epoch”不成立。
 
-## 第 22 页｜100 epoch 恢复完成：早期达峰，增加轮次没有修复精度与延迟
+## 第 22 页｜精度修复保护 Head，但训练前延迟门禁证明当前剪枝路径应停止
 
 ### 本页目的
 
-用训练曲线、最佳 epoch 和部署门禁解释失败原因，避免把问题简单归因于“训练轮次太少”。
+展示 Codex 如何把失败证据转成一个最小修复假设，再用训练前硬门禁避免第二次无效长训。
 
 ### 可直接照读
 
-这次恢复训练已经真正跑完 100 个 epoch，配置是 SGD、`lr0=2e-4`、batch 64、640 输入、真实 GT 加 0.25 倍 output KD，总耗时 3.81 小时。训练中没有 OOM，也没有 NaN。
+第一步是 evidence。我们不是凭直觉说 Head 敏感，而是统计模型结构：53 个保守剪枝根中有 36 个位于 Detect/Pose Head；Head 自身占总参数的 53.9%。再结合第一阶段 Pose mAP 在 epoch 24、PCK 在 epoch 30 到 31 已经达峰，说明继续增加相同训练轮次不能解决问题。
 
-但是训练曲线给出一个非常清楚的证据：Box mAP50-95 在 epoch 14 达峰，Pose mAP50-95 在 epoch 24 达峰，PCK 和 NME 在 epoch 30 到 31 左右达峰。此后训练 loss 继续下降，但验证指标平台化或回落。这不是“100 epoch 还不够”，而是典型的恢复上限和泛化差距已经出现。继续加到 200 epoch 只会增加计算成本，没有证据表明会追回 0.099 的 Pose mAP。
+第二步是 repair。代码新增 `head_pruning_ratio`，把 Backbone/Neck 和 Head 的剪枝率解耦。唯一候选是 Backbone/Neck 20%、Head 0%，最终输出继续保护；通道从 round-to-8 改为 round-to-16，尝试兼顾容量和硬件形状。TDD 先得到 3 项预期失败，完成实现后 15 项聚焦测试全部通过。
 
-右上角的 `100 / 100 COMPLETE` 只表示任务完整结束、产物齐全。紧接着的 `DEPLOY GATE: FAIL` 才是工程结论。参数门禁通过；Pose mAP、PCK、NME 和至少 10% 的 FP16 latency 收益全部失败，所以 baseline 不被覆盖。
+第三步是 pre-gate。Head 完全保护后，参数从 4,005,986 只降到 3,817,154，减少 4.71%；GFLOPs 从 13.5 降到 12.9。它没有达到预设的 10% 结构门禁。
 
-从证据看，第一阶段的主要问题有两个。第一，统一 15% 剪枝虽然保护了最终 64、1、42 通道输出，却仍可能裁掉 Pose Head 隐藏塔和高分辨率路径的敏感容量，导致召回和关键点精度显著下降。第二，round-to-8 产生的窄通道没有落到 3090 Ti 更高效的执行形状，因此参数和 FLOPs 的下降没有兑现成墙钟时间。
+更关键的是 latency。使用与 baseline 完全相同的 RTX 3090 Ti、batch 1、640、one-to-one-only、Conv/BN fuse、FP16 和三轮计时，候选是 5.9229 毫秒，baseline 是 5.7010 毫秒。候选反而慢 3.89%。
+
+所以右上角写的是 `15 / 15 TEST PASS`，但 `FORMAL TRAIN: STOPPED`。测试通过只说明实现符合设计；它不代表方案值得训练。正式训练可以改变权重和精度，却不能改变这组已经更慢的通道 shape 和执行图。既然加速目标在训练前已经失败，就不启动小 epoch 或长 epoch。
 
 ### 实验决策
 
-第二阶段只验证一个最小修复，不做盲目网格搜索：保护 Pose/Detect Head 的敏感剪枝根，Backbone/Neck 使用分层剪枝率，并把通道对齐提升到更适合硬件验证的 16；KD 权重采用有限调度。先评估剪枝初始化和小 epoch 趋势，同时先测 latency。只有精度方向和延迟方向同时改善，才允许进入正式恢复训练。
+第二阶段不是“没有做完”，而是按事先门禁完成了止损。它揭示了当前模型上的结构性冲突：保护占参数 53.9% 的 Head 可以降低精度风险，但可剪空间不足；剩余 4.7% 的收缩没有落到更快的 GPU kernel。继续研究应切换到 TensorRT 实际 engine 的 latency-aware channel search，或从架构层面设计显式窄宽 Student，而不是继续调 epoch。
 
 ### 过渡
 
-到这里，第一阶段闭环完整结束：真实训练、真实失败、保留 baseline、留下下一阶段的可证伪假设。最后回到整个项目的工程结论。
+到这里，两阶段闭环都结束：第一次用 100 epoch 证明统一剪枝无法恢复精度；第二次用训练前门禁证明 Head 保护无法兑现速度。两次都保留 baseline，且没有修改训练数据。最后回到整个项目的工程结论。
 
 ## 第 23 页｜结论
 
@@ -670,11 +672,14 @@ Torch-Pruning 的关键价值是依赖传播。例如剪掉某个卷积的第 k 
 - 剪枝/恢复蒸馏实现：`ultralytics/models/yolov10/prune_distill.py`
 - 剪枝/恢复蒸馏配置：`configs/pose_prune_distill.yaml`
 - 100-epoch 实测配置：`configs/pose_prune_distill_100e.yaml`
+- Head 保护门禁配置：`configs/pose_prune_repair_gate.yaml`
 - 剪枝与蒸馏测试：`tests/test_pose_pruning_distillation.py`、`tests/test_pose_pruning_pipeline.py`
 - 剪枝结构报告：`reports/pruning/r2/prune15_structure_20260723.json`
 - 第一阶段同口径结论：`reports/pruning/r2/comparison.json`、`reports/pruning/r2/first_stage_report.md`
 - 剪枝模型 PCK/NME：`reports/pruning/r2/vehicle_pose_metrics.json`
 - Baseline / Pruned FP16 benchmark：`reports/benchmark/prune15_kd100_r2/`
+- 第二阶段止损报告：`reports/pruning/repair_head_protected/second_stage_report.md`
+- Head 保护候选 benchmark：`reports/benchmark/repair_prune20_head0_r16/`
 - Smoke 报告：`reports/training/06_smoke_report.md`
 - Overfit 报告：`reports/training/06_overfit_report.md`
 - Baseline 报告：`reports/training/06_baseline_report.md`
@@ -722,7 +727,7 @@ Torch-Pruning 的关键价值是依赖传播。例如剪掉某个卷积的第 k 
 
 ## Q8：所谓延迟门禁和精度门禁的阈值是什么？
 
-本轮实际决策使用了“必须有清晰、可重复的实际加速且精度基本不退化”，但没有事先把百分比写死，这是流程缺口。下一轮建议在实验前约定：平均延迟至少下降 5%、各轮方向一致、P95 不退化；PCK@0.05 下降不超过 0.0015、Pose mAP50-95 下降不超过 0.002。最终阈值应由真实部署 SLA 和业务容忍度决定。
+剪枝实验在运行前固化为：参数至少减少 10%，同口径 fused FP16 延迟至少降低 10%；Pose mAP50-95 和 PCK@0.05 下降不超过 0.005，PCK@0.10 下降不超过 0.002，NME 增加不超过 0.001。第一阶段只通过参数门禁；第二阶段连训练前参数与 latency 门禁都未通过。生产阈值最终仍应由业务 SLA 确认，但不能在看到结果后临时修改。
 
 ## Q9：参数减少 16.36%，为什么延迟只改善 0.34%？
 
@@ -730,4 +735,4 @@ Torch-Pruning 的关键价值是依赖传播。例如剪掉某个卷积的第 k 
 
 ## Q10：100 epoch 都没有恢复，为什么第二阶段还值得做？
 
-第一阶段证明“统一 15% 剪枝 + 固定 0.25 KD”失败，但没有证明所有结构化剪枝都失败。曲线早期达峰说明继续增加 epoch 没有意义；修复必须改变结构假设，而不是延长相同训练。第二阶段只验证一个有证据支持的候选：保护 Pose/Detect Head、高分辨率路径和硬件对齐。如果小规模精度或 latency 门禁仍失败，就停止，不进行长期训练。
+第一阶段证明“统一 15% 剪枝 + 固定 0.25 KD”失败，但没有证明所有结构化剪枝都失败，所以值得验证一个改变结构假设的候选。第二阶段已经完成：Head 完全保护、Backbone/Neck 20%、round-to-16。它只减少 4.71% 参数，FP16 latency 反而慢 3.89%，因此按预设规则停止，没有进行长期训练。这正是第二阶段的价值：用不到一分钟级别的结构与 benchmark 门禁，避免再花数小时训练一个不可能完成加速目标的执行图。

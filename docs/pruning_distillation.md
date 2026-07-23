@@ -149,3 +149,29 @@ flowchart LR
 3. whole-model checkpoint 只能加载本仓库自产且来源可信的文件；
 4. baseline 权重、数据 YAML、转换后数据和既有报告全部只读；
 5. 若参数减少但 latency 无改善，立即判定部署收益失败；若精度恢复但 latency 失败，也不得推荐上线。
+
+## 第二阶段：Head 保护修复与训练前止损
+
+第一阶段的 53 个剪枝根中有 36 个位于 Detect/Pose Head，Head 参数占总模型 53.9%。结合 Pose mAP、PCK 在 epoch 24–31 早期达峰后不再恢复的证据，第二阶段不再增加 epoch，而是新增 `head_pruning_ratio`，允许 Head 隐藏塔独立保护。
+
+独立候选使用 Backbone/Neck 20%、Head 0%、`round_to=16`。TDD 过程先得到 3 个预期失败，完成实现后 15 项聚焦测试通过。真实结构与训练前 benchmark 为：
+
+| 指标 | Baseline | Head 保护候选 | 变化 |
+|---|---:|---:|---:|
+| 参数量 | 4,005,986 | 3,817,154 | -4.71% |
+| fused FP16 latency | 5.7010 ms | 5.9229 ms | +3.89%（更慢） |
+
+候选没有达到参数减少 10% 和 latency 降低 10% 的预训练门禁，因此没有启动恢复训练。训练可以改变权重和精度，不能改变已经测得更慢的执行图；继续消耗 epoch 与本实验的加速目标无关。
+
+复现命令：
+
+```bash
+.venv/bin/python scripts/prune_vehicle_pose.py \
+  --checkpoint vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt \
+  --output outputs/pruning/yolov10n_pose_prune20_head0_r16_init_20260724.pt \
+  --report reports/pruning/repair_prune20_head0_r16_init_20260724.json \
+  --graph-imgsz 64 --pruning-ratio 0.20 \
+  --head-pruning-ratio 0 --round-to 16 --device cuda
+```
+
+配置与证据位于 `configs/pose_prune_repair_gate.yaml`、`reports/pruning/repair_head_protected/` 和 `reports/benchmark/repair_prune20_head0_r16/`。

@@ -1,0 +1,25 @@
+# Second-stage accuracy-repair candidate.
+# This file documents the pre-training gate; it is not a trainer config.
+source_checkpoint: vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt
+output_checkpoint: outputs/pruning/yolov10n_pose_prune20_head0_r16_init_20260724.pt
+structure_report: reports/pruning/repair_head_protected/repair_prune20_head0_r16_init_20260724.json
+benchmark_report: reports/benchmark/repair_prune20_head0_r16/init_fused_fp16.json
+
+graph_imgsz: 64
+pruning_ratio: 0.20
+head_pruning_ratio: 0.0
+round_to: 16
+device: cuda
+
+gates:
+  minimum_parameter_reduction: 0.10
+  minimum_fused_fp16_latency_reduction: 0.10
+  formal_training_requires_all_pretrain_gates: true
+
+measured:
+  parameter_reduction: 0.0471374587929164
+  baseline_fused_fp16_ms: 5.701039431413015
+  candidate_fused_fp16_ms: 5.922946353276571
+  latency_reduction: -0.03892393085495081
+  formal_training_authorized: false
+  stop_reason: "Head protection preserved capacity but failed both the parameter and pre-training latency gates."

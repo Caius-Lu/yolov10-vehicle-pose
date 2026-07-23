@@ -9,6 +9,15 @@ from scripts.prune_vehicle_pose import validate_output_paths
 from scripts.train_pose_pruned_distillation import load_experiment_config
 
 
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_pruning_cli_exposes_independent_head_ratio():
+    source = (ROOT / "scripts/prune_vehicle_pose.py").read_text(encoding="utf-8")
+
+    assert "--head-pruning-ratio" in source
+
+
 def test_pruning_refuses_to_overwrite_the_baseline_checkpoint(tmp_path):
     checkpoint = tmp_path / "best.pt"
     report = tmp_path / "report.json"

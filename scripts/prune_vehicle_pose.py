@@ -53,6 +53,12 @@ def parse_args():
         help="small multiple-of-32 input used only to trace the fully convolutional dependency graph",
     )
     parser.add_argument("--pruning-ratio", type=float, default=0.15)
+    parser.add_argument(
+        "--head-pruning-ratio",
+        type=float,
+        default=None,
+        help="independent hidden Detect/Pose head ratio; use 0 to protect all head hidden roots",
+    )
     parser.add_argument("--iterative-steps", type=int, default=1)
     parser.add_argument("--round-to", type=int, default=8)
     parser.add_argument("--global-pruning", action="store_true")
@@ -82,6 +88,7 @@ def main():
     example = torch.randn(1, 3, args.graph_imgsz, args.graph_imgsz, device=device)
     config = PruningConfig(
         pruning_ratio=args.pruning_ratio,
+        head_pruning_ratio=args.head_pruning_ratio,
         iterative_steps=args.iterative_steps,
         round_to=args.round_to,
         global_pruning=args.global_pruning,

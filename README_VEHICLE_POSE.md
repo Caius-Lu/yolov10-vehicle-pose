@@ -118,6 +118,8 @@ scripts/profile_torch.sh --checkpoint vehicle_pose_runs/baseline/weights/best.pt
 
 验证必须与 200-epoch baseline 使用相同数据、640 输入和指标定义；延迟必须用 batch=1、one-to-one-only、Conv/BN fuse、FP16 的同机口径横向比较。已经完成的 100-epoch 实验减少 16.36% 参数，但 Pose mAP50-95 下降 0.09923，FP16 latency 仅改善 0.34%，因此不进入部署推荐。详细结果、失败恢复和 whole-model checkpoint 安全边界见 [docs/pruning_distillation.md](docs/pruning_distillation.md)。
 
+精度修复候选可用 `--head-pruning-ratio 0` 完全保护 Head。已验证的 Backbone/Neck 20%、Head 0%、`round-to=16` 候选只减少 4.71% 参数，FP16 latency 反而慢 3.89%，因此按训练前门禁停止，未启动正式恢复训练。复现参数见 `configs/pose_prune_repair_gate.yaml`。
+
 ## 10. Fast / Balanced / Accurate
 
 真实 baseline 训练、正式 benchmark 与消融完成前不会生成虚假版本。后续复现入口预留为 `scripts/reproduce_fast.sh`、`reproduce_balanced.sh`、`reproduce_accurate.sh`。

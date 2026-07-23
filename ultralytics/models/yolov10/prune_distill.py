@@ -25,6 +25,7 @@ class PruningConfig:
     """Conservative dependency-aware channel-pruning settings."""
 
     pruning_ratio: float = 0.15
+    head_pruning_ratio: float | None = None
     iterative_steps: int = 1
     round_to: int = 8
     global_pruning: bool = False
@@ -33,6 +34,8 @@ class PruningConfig:
     def __post_init__(self):
         if not 0.0 < self.pruning_ratio < 0.5:
             raise ValueError("pruning_ratio must be greater than 0 and less than 0.5")
+        if self.head_pruning_ratio is not None and not 0.0 <= self.head_pruning_ratio < 0.5:
+            raise ValueError("head_pruning_ratio must be at least 0 and less than 0.5")
         if self.iterative_steps <= 0:
             raise ValueError("iterative_steps must be positive")
         if self.round_to <= 0:
@@ -112,7 +115,7 @@ def _head_hidden_convolutions(head):
     return roots
 
 
-def collect_prunable_root_layers(model):
+def collect_prunable_root_layers(model, include_head_hidden=True):
     """Select conservative roots whose output width has no stale split attribute.
 
     Internal C2f/PSA split convolutions and depthwise roots are deliberately not
@@ -133,7 +136,8 @@ def collect_prunable_root_layers(model):
             roots.append(block.cv1.conv)
         elif isinstance(block, PSA):
             roots.append(block.cv2.conv)
-    roots.extend(_head_hidden_convolutions(model.model[-1]))
+    if include_head_hidden:
+        roots.extend(_head_hidden_convolutions(model.model[-1]))
     unique = []
     seen = set()
     for layer in roots:
@@ -177,7 +181,12 @@ def structurally_prune_model(model, example_input, config=None, pruning_backend=
     head = model.model[-1]
     protected = collect_head_output_layers(head)
     protected_widths = [layer.out_channels for layer in protected]
-    roots = collect_prunable_root_layers(model)
+    backbone_neck_roots = collect_prunable_root_layers(model, include_head_hidden=False)
+    all_roots = collect_prunable_root_layers(model, include_head_hidden=True)
+    backbone_neck_ids = {id(layer) for layer in backbone_neck_roots}
+    head_hidden_roots = [layer for layer in all_roots if id(layer) not in backbone_neck_ids]
+    head_ratio = config.pruning_ratio if config.head_pruning_ratio is None else config.head_pruning_ratio
+    roots = [*backbone_neck_roots, *head_hidden_roots] if head_ratio > 0 else backbone_neck_roots
     if not roots:
         raise RuntimeError("no conservative pruning roots were found")
     ignored_roots = collect_ignored_root_layers(model, roots)
@@ -214,7 +223,10 @@ def structurally_prune_model(model, example_input, config=None, pruning_backend=
         # non-zero ratio; coupled inputs/BN/depthwise layers are then adjusted
         # by DepGraph instead of becoming independent pruning roots.
         pruning_ratio=0.0,
-        pruning_ratio_dict={layer: config.pruning_ratio for layer in roots},
+        pruning_ratio_dict={
+            **{layer: config.pruning_ratio for layer in backbone_neck_roots},
+            **{layer: head_ratio for layer in head_hidden_roots if head_ratio > 0},
+        },
         iterative_steps=config.iterative_steps,
         global_pruning=config.global_pruning,
         # MetaPruner scans every Conv2d group even when its ratio is zero.
@@ -240,6 +252,9 @@ def structurally_prune_model(model, example_input, config=None, pruning_backend=
         parameters_after,
         pruning_config=asdict(config),
         prunable_root_count=len(roots),
+        backbone_neck_root_count=len(backbone_neck_roots),
+        head_hidden_root_count=len(head_hidden_roots),
+        head_hidden_pruned_root_count=len(head_hidden_roots) if head_ratio > 0 else 0,
         ignored_root_count=len(ignored_roots),
         protected_output_count=len(protected),
         macs_before=float(macs_before) if macs_before is not None else None,
