@@ -1,0 +1,153 @@
+{
+  "environment": {
+    "device": "NVIDIA GeForce RTX 3090 Ti",
+    "torch": "2.6.0+cu124",
+    "precision": "fused FP16",
+    "batch": 1,
+    "imgsz": 640,
+    "path": "one-to-one-only"
+  },
+  "thresholds": {
+    "min_parameter_reduction_pct": 10.0,
+    "min_gflops_reduction_pct": 8.0,
+    "min_latency_reduction_pct": 5.0
+  },
+  "models": {
+    "baseline": {
+      "parameters": 4005986,
+      "gflops": 9.380352,
+      "config": "ultralytics/cfg/models/v10/yolov10n-vehicle-pose.yaml",
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.79177011013031,
+          "std_ms": 0.5196800285025049,
+          "min_ms": 5.142560005187988,
+          "max_ms": 9.318400382995605,
+          "p50_ms": 5.623807907104492,
+          "p90_ms": 6.481203413009644,
+          "p95_ms": 6.81666715145111,
+          "p99_ms": 7.778560738563537,
+          "fps_from_mean": 172.65878668956714,
+          "round": 1,
+          "order": [
+            "baseline",
+            "pose96d1_boxd1"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.774509192466736,
+          "std_ms": 0.5292557970466186,
+          "min_ms": 5.172224044799805,
+          "max_ms": 11.466848373413086,
+          "p50_ms": 5.599744081497192,
+          "p90_ms": 6.398489665985108,
+          "p95_ms": 6.695116758346558,
+          "p99_ms": 7.848744430541991,
+          "fps_from_mean": 173.1748910027838,
+          "round": 2,
+          "order": [
+            "pose96d1_boxd1",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.746613729000091,
+          "std_ms": 0.4437026481507646,
+          "min_ms": 5.079040050506592,
+          "max_ms": 9.089247703552246,
+          "p50_ms": 5.593600034713745,
+          "p90_ms": 6.3602784156799315,
+          "p95_ms": 6.61142382621765,
+          "p99_ms": 7.267285008430481,
+          "fps_from_mean": 174.0155241257184,
+          "round": 3,
+          "order": [
+            "baseline",
+            "pose96d1_boxd1"
+          ]
+        }
+      ],
+      "mean_latency_ms": 5.770964343865713
+    },
+    "pose96d1_boxd1": {
+      "parameters": 3285218,
+      "gflops": 7.3568256,
+      "config": "ultralytics/cfg/models/v10/yolov10n-vehicle-pose-head96d1-boxd1.yaml",
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.438423460006714,
+          "std_ms": 0.47152653418754603,
+          "min_ms": 4.7032318115234375,
+          "max_ms": 9.61843204498291,
+          "p50_ms": 5.289151906967163,
+          "p90_ms": 6.035737752914429,
+          "p95_ms": 6.374705481529236,
+          "p99_ms": 6.983446073532104,
+          "fps_from_mean": 183.87681785977833,
+          "round": 1,
+          "order": [
+            "baseline",
+            "pose96d1_boxd1"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.495369216918945,
+          "std_ms": 0.6591810825414254,
+          "min_ms": 4.934656143188477,
+          "max_ms": 13.17580795288086,
+          "p50_ms": 5.311424016952515,
+          "p90_ms": 6.115318441390991,
+          "p95_ms": 6.4112895011901845,
+          "p99_ms": 7.703616166114806,
+          "fps_from_mean": 181.97139455548063,
+          "round": 2,
+          "order": [
+            "pose96d1_boxd1",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.844540605545044,
+          "std_ms": 1.6263608936130056,
+          "min_ms": 4.875232219696045,
+          "max_ms": 13.743871688842773,
+          "p50_ms": 5.29700779914856,
+          "p90_ms": 6.576713466644287,
+          "p95_ms": 10.243125009536733,
+          "p99_ms": 12.621263456344602,
+          "fps_from_mean": 171.09984641927954,
+          "round": 3,
+          "order": [
+            "baseline",
+            "pose96d1_boxd1"
+          ]
+        }
+      ],
+      "mean_latency_ms": 5.5927777608235685
+    }
+  },
+  "decisions": {
+    "pose96d1_boxd1": {
+      "train_allowed": false,
+      "failed_gates": [
+        "latency"
+      ],
+      "improvement_pct": {
+        "parameters": 17.992274561119284,
+        "gflops": 21.571966595709846,
+        "latency": 3.087639646076642
+      },
+      "required_improvement_pct": {
+        "parameters": 10.0,
+        "gflops": 8.0,
+        "latency": 5.0
+      }
+    }
+  }
+}

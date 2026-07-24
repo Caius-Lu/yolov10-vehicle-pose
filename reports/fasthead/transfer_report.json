@@ -1,0 +1,37 @@
+{
+  "direct_tensor_count": 553,
+  "remapped_tensor_count": 18,
+  "remapped_tensors": [
+    "cv2.0.output.weight",
+    "cv2.0.output.bias",
+    "cv2.1.output.weight",
+    "cv2.1.output.bias",
+    "cv2.2.output.weight",
+    "cv2.2.output.bias",
+    "one2one_cv2.0.output.weight",
+    "one2one_cv2.0.output.bias",
+    "one2one_cv2.1.output.weight",
+    "one2one_cv2.1.output.bias",
+    "one2one_cv2.2.output.weight",
+    "one2one_cv2.2.output.bias",
+    "cv4.0.output.bias",
+    "cv4.1.output.bias",
+    "cv4.2.output.bias",
+    "one2one_cv4.0.output.bias",
+    "one2one_cv4.1.output.bias",
+    "one2one_cv4.2.output.bias"
+  ],
+  "missing_key_count": 54,
+  "unexpected_key_count": 0,
+  "student_parameters": 3018722,
+  "teacher_parameters": 4005986,
+  "source_checkpoint": "/home/caius/projects/yolopose/yolov10-vehicle-pose/vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt",
+  "model_config": "/home/caius/projects/yolopose/yolov10-vehicle-pose/ultralytics/cfg/models/v10/yolov10n-vehicle-pose-fasthead-boxd1.yaml",
+  "output_checkpoint": "/home/caius/projects/yolopose/yolov10-vehicle-pose/outputs/fasthead/fasthead64_boxd1_init.pt",
+  "smoke_output_shape": [
+    1,
+    47,
+    84
+  ],
+  "smoke_finite": true
+}

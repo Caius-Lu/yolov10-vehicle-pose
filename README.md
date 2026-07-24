@@ -137,6 +137,55 @@ scripts/stage_carfusion_to_wsl.sh \
 
 第二阶段根据曲线和根层分布新增 Head 独立保护：Backbone/Neck 20%、Head 0%、`round_to=16`。该候选只减少 4.71% 参数，fused FP16 延迟反而增加 3.89%，在训练前门禁即停止，未启动无部署价值的长训。详见 [第二阶段报告](reports/pruning/repair_head_protected/second_stage_report.md)。
 
+### 显式 FastHead：先测执行图，再允许训练
+
+后续优化不再从任意通道剪枝开始，而是直接缩短 Pose/Box 输出塔，并用
+`benchmarks/pretrain_architecture_gate.py` 同时检查物理参数量、one-to-one
+GFLOPs 和 RTX 3090 Ti 上的 fused FP16 延迟。默认门槛分别为减少
+10%、8% 和 5%；任一失败都禁止恢复训练。
+
+当前通过训练前门禁的候选将 Pose Tower 从 `96×2` 改为 `64×1`，同时将
+Box Tower 从两层空间卷积缩为一层：
+
+| 指标 | 200e baseline 结构 | FastHead 64×1 / Box×1 | 变化 |
+|---|---:|---:|---:|
+| 参数量 | 4,005,986 | 3,018,722 | -24.64% |
+| one-to-one GFLOPs | 9.380 | 6.919 | -26.24% |
+| fused FP16 latency | 6.059 ms | 5.665 ms | -6.51% |
+
+更小的 Pose 32×1 虽减少 31.30% 参数，却只快 4.53%，未通过 latency
+门禁；更保守的 Pose 96×1 / Box×1 也因三轮平均仅快 3.09% 而停止。
+这说明通道数必须服从目标硬件实测，不能按参数量单调外推速度。完整原始
+证据在 [FastHead 训练前门禁](reports/benchmark/fasthead_gate)。
+
+通过门禁后才从 200-epoch baseline 迁移同形权重和兼容输出层：
+
+```bash
+.venv/bin/python scripts/build_fasthead_checkpoint.py \
+  --checkpoint vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt \
+  --model ultralytics/cfg/models/v10/yolov10n-vehicle-pose-fasthead-boxd1.yaml
+WANDB_MODE=disabled .venv/bin/python scripts/train_pose_pruned_distillation.py \
+  --config configs/pose_fasthead_kd_smoke.yaml
+WANDB_MODE=disabled .venv/bin/python scripts/train_pose_pruned_distillation.py \
+  --config configs/pose_fasthead_kd_gate.yaml
+```
+
+1-epoch、128/32 图 smoke 已通过 AMP、KD、反向、验证与 checkpoint 保存。随后采用有界自适应 epoch：10e 末段持续上升后追加到 30e，30e 末段仍上升后追加到累计 50e 的硬上限。续训时暴露的“checkpoint 缓存 criterion 仍在 CPU”问题已先补回归测试，再在设备迁移前丢弃陈旧 criterion；21 项聚焦测试通过。
+
+最终 50e 实测证明 FastHead **不是** baseline 替代品：
+
+| 指标 | 200e baseline | FastHead 50e | 变化 |
+|---|---:|---:|---:|
+| 参数量 | 4,005,986 | 3,018,722 | -24.64% |
+| Box mAP50-95 | 0.66761 | 0.55303 | -0.11458 |
+| Pose mAP50-95 | 0.51455 | 0.37569 | -0.13886 |
+| PCK@0.05 | 0.66863 | 0.56017 | -0.10846 |
+| PCK@0.10 | 0.85248 | 0.80219 | -0.05029 |
+| NME | 0.05960 | 0.07635 | +0.01675 |
+| fused FP16 latency | 5.6955 ms | 5.3314 ms | -6.39% |
+
+模块级 CUDA Event 仅用于占比分析：FastHead 的 Backbone + Neck 已占 71.6% 顶层模块时间；Head 参数减少 45.7%，Head 时间却只减少约 21.0%。因此参数量与 GPU 延迟不线性，继续压缩 Pose Head 会扩大精度损失，下一轮速度优化应优先验证 PSA、C2f/C2fCIB、TensorRT/Kernel 融合。完整结果与边界见 [最终报告](reports/fasthead/final_50e/final_report.md)。
+
 ## 测试
 
 ```bash

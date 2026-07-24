@@ -120,11 +120,59 @@ scripts/profile_torch.sh --checkpoint vehicle_pose_runs/baseline/weights/best.pt
 
 精度修复候选可用 `--head-pruning-ratio 0` 完全保护 Head。已验证的 Backbone/Neck 20%、Head 0%、`round-to=16` 候选只减少 4.71% 参数，FP16 latency 反而慢 3.89%，因此按训练前门禁停止，未启动正式恢复训练。复现参数见 `configs/pose_prune_repair_gate.yaml`。
 
-## 10. Fast / Balanced / Accurate
+## 10. 显式 FastHead 与训练前速度门禁
+
+FastHead 不做不规则后剪枝，而是把 Pose Tower 的 `96×2` 显式缩为
+`64×1`，并把 Box Tower 从两层 3×3 缩为一层。候选在读取训练数据前
+必须通过参数量、GFLOPs、真实 fused FP16 latency 三个独立门禁：
+
+```bash
+.venv/bin/python -m benchmarks.pretrain_architecture_gate \
+  --baseline ultralytics/cfg/models/v10/yolov10n-vehicle-pose.yaml \
+  --candidate fasthead=ultralytics/cfg/models/v10/yolov10n-vehicle-pose-fasthead-boxd1.yaml \
+  --device cuda:0 --imgsz 640 --warmup 100 --iterations 1000 --rounds 3 \
+  --output reports/benchmark/fasthead_gate/reproduce.json
+```
+
+RTX 3090 Ti 实测参数减少 24.64%、one-to-one GFLOPs 减少 26.24%、
+fused FP16 延迟减少 6.51%，因此允许进入恢复训练。Pose 32×1 因只快
+4.53% 被淘汰，证明更少参数不必然更快。
+
+```bash
+.venv/bin/python scripts/build_fasthead_checkpoint.py \
+  --checkpoint vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt
+WANDB_MODE=disabled .venv/bin/python scripts/train_pose_pruned_distillation.py \
+  --config configs/pose_fasthead_kd_smoke.yaml
+WANDB_MODE=disabled .venv/bin/python scripts/train_pose_pruned_distillation.py \
+  --config configs/pose_fasthead_kd_gate.yaml
+```
+
+smoke 只验证 AMP/KD/反向/保存链路，不用小样本 mAP 作精度决策。正式实验使用有界自适应 epoch：10e 和累计 30e 只有在末段 Box/Pose/PCK/NME 仍可信改善时才续训，并在累计 50e 硬停止。对应独立配置为：
+
+```bash
+configs/pose_fasthead_kd_gate.yaml
+configs/pose_fasthead_kd_adaptive_30e_r3.yaml
+configs/pose_fasthead_kd_adaptive_50e_r4.yaml
+```
+
+最终完整验证与同口径 640、batch1、one-to-one-only、Conv/BN fuse、FP16 benchmark：
+
+| 指标 | 200e baseline | FastHead 50e |
+|---|---:|---:|
+| 参数量 | 4,005,986 | 3,018,722 |
+| Box mAP50-95 | 0.66761 | 0.55303 |
+| Pose mAP50-95 | 0.51455 | 0.37569 |
+| PCK@0.05 / PCK@0.10 | 0.66863 / 0.85248 | 0.56017 / 0.80219 |
+| NME | 0.05960 | 0.07635 |
+| fused FP16 latency | 5.6955 ms | 5.3314 ms |
+
+速度改善 6.39%，但 Pose mAP 损失 0.13886，因此不替换 baseline。模块剖析显示 FastHead 的 Backbone + Neck 占 71.6% 顶层模块时间；后续应先对 PSA、C2f/C2fCIB 和部署后端做硬件实测，不继续盲目缩小 Pose Head。详见 `reports/fasthead/final_50e/final_report.md`。
+
+## 11. Fast / Balanced / Accurate
 
 真实 baseline 训练、正式 benchmark 与消融完成前不会生成虚假版本。后续复现入口预留为 `scripts/reproduce_fast.sh`、`reproduce_balanced.sh`、`reproduce_accurate.sh`。
 
-## 11. 总验收
+## 12. 总验收
 
 ```bash
 DEVICE=cuda:0 IMGSZ=640 scripts/validate_project.sh

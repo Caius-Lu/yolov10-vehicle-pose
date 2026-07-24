@@ -198,6 +198,17 @@ def test_checkpoint_copy_drops_pruning_distillation_teacher():
     assert checkpoint_copy.distillation_config is None
 
 
+def test_upgrade_drops_stale_loss_criterion_before_device_migration():
+    student = YOLOv10PoseModel(POSE_CFG, verbose=False)
+    teacher = YOLOv10PoseModel(POSE_CFG, verbose=False)
+    stale_criterion = object()
+    student.criterion = stale_criterion
+
+    upgraded = upgrade_for_pruning_distillation(student, teacher, OutputDistillationConfig())
+
+    assert not hasattr(upgraded, "criterion")
+
+
 def test_pruned_checkpoint_drops_stale_loss_criterion_before_recovery_training():
     model = YOLOv10PoseModel(POSE_CFG, verbose=False)
     model.criterion = object()

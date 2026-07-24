@@ -538,19 +538,42 @@ class v10Detect(Detect):
 class v10Pose(v10Detect):
     """YOLOv10 dual-assignment pose head with an NMS-free one-to-one inference path."""
 
-    def __init__(self, nc=1, kpt_shape=(14, 3), pose_head_channels=96, pose_head_depth=2, ch=()):
+    def __init__(
+        self,
+        nc=1,
+        kpt_shape=(14, 3),
+        pose_head_channels=96,
+        pose_head_depth=2,
+        box_head_depth=2,
+        ch=(),
+    ):
+        # parse_model historically appended ch as the fifth positional argument.
+        # Preserve old YAML/checkpoint construction while allowing an optional
+        # box_head_depth before the newly appended channel list.
+        if isinstance(box_head_depth, (list, tuple)):
+            ch, box_head_depth = box_head_depth, 2
         super().__init__(nc, ch)
         if len(kpt_shape) != 2 or kpt_shape[0] <= 0 or kpt_shape[1] not in (2, 3):
             raise ValueError(f"Invalid kpt_shape={kpt_shape}; expected [keypoint_count, 2|3]")
         if pose_head_channels <= 0 or pose_head_depth <= 0:
             raise ValueError("pose_head_channels and pose_head_depth must be positive")
+        if box_head_depth not in (1, 2):
+            raise ValueError("box_head_depth must be 1 or 2")
         self.kpt_shape = list(kpt_shape)
         self.nk = self.kpt_shape[0] * self.kpt_shape[1]
         self.pose_head_channels = pose_head_channels
         self.pose_head_depth = pose_head_depth
+        self.box_head_depth = box_head_depth
         self.one2one_only = False
+        if self.box_head_depth == 1:
+            self.cv2 = nn.ModuleList(self._box_tower(x) for x in ch)
+            self.one2one_cv2 = copy.deepcopy(self.cv2)
         self.cv4 = nn.ModuleList(self._pose_tower(x) for x in ch)
         self.one2one_cv4 = copy.deepcopy(self.cv4)
+
+    def _box_tower(self, input_channels):
+        hidden_channels = max(16, input_channels // 4, self.reg_max * 4)
+        return nn.Sequential(Conv(input_channels, hidden_channels, 3), nn.Conv2d(hidden_channels, 4 * self.reg_max, 1))
 
     def _pose_tower(self, input_channels):
         layers = [Conv(input_channels, self.pose_head_channels, 3)]

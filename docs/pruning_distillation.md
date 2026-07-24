@@ -175,3 +175,100 @@ flowchart LR
 ```
 
 配置与证据位于 `configs/pose_prune_repair_gate.yaml`、`reports/pruning/repair_head_protected/` 和 `reports/benchmark/repair_prune20_head0_r16/`。
+
+## 第三阶段：FastHead 显式结构搜索
+
+结构化剪枝证明了 nano 级模型缺少可随意删除的冗余后，第三阶段不再让依赖图任意选择通道，而是显式缩短 Pose/Box 输出塔。固定 Backbone、Neck、DFL/分类/关键点输出维度和 YOLOv10 双分配语义，只搜索 Pose Tower 宽度、深度及 Box Tower 深度。
+
+训练前共测试七组结构：
+
+| Pose / Box 结构 | 参数下降 | GFLOPs 下降 | fused FP16 延迟下降 | 结论 |
+|---|---:|---:|---:|---|
+| 96×2 / Box×2 baseline | 0% | 0% | 0% | 参照 |
+| 96×1 / Box×2 | 12.45% | 14.92% | 1.69% | FAIL |
+| 64×2 / Box×2 | 13.56% | 12.94% | 2.18% | FAIL |
+| 64×1 / Box×2 | 19.10% | 19.59% | 3.15% | FAIL |
+| 96×1 / Box×1 | 17.99% | 21.57% | 3.09% | FAIL |
+| 64×1 / Box×1 | 24.64% | 26.24% | 6.51% | PASS，允许训练 |
+| 32×1 / Box×1 | 31.30% | 30.90% | 4.53% | FAIL，更小但更慢 |
+
+该结果表明，参数量和 FLOPs 只能描述工作量，不能单调预测 GPU 延迟。通道是否对齐目标硬件、每层算子规模、Kernel 启动次数、访存与算术强度都会改变最终速度。
+
+复现训练前门禁：
+
+```bash
+.venv/bin/python -m benchmarks.pretrain_architecture_gate \
+  --baseline ultralytics/cfg/models/v10/yolov10n-vehicle-pose.yaml \
+  --candidate fasthead=ultralytics/cfg/models/v10/yolov10n-vehicle-pose-fasthead-boxd1.yaml \
+  --device cuda:0 --imgsz 640 --warmup 100 --iterations 1000 --rounds 3 \
+  --output reports/benchmark/fasthead_gate/reproduce.json
+```
+
+## FastHead 有界自适应训练与 TDD 恢复
+
+FastHead 先执行 1-epoch smoke 验证 AMP、KD、反向、验证和 checkpoint 保存，再运行 10e 精度门禁。只有最佳点靠近末尾且 Box/Pose/PCK/NME 与 loss 提供一致的上升证据时，才使用独立 checkpoint、配置、run 名和输出目录追加训练：
+
+1. 10e：Pose mAP50-95 达 0.3181，末四轮仍上升，允许追加 20e；
+2. 首次 r2 在首 batch 前安全失败：whole-model checkpoint 缓存的 `criterion` 仍在 CPU；
+3. 先新增回归测试，再在 `upgrade_for_pruning_distillation` 的设备迁移前丢弃陈旧 `criterion`，21 项聚焦测试通过；
+4. r3 累计 30e：Pose 0.3631、Box 0.5428、NME 0.0781，末五轮仍改善；
+5. r4 追加最后 20e，累计 50e 达到硬上限，不再续训。
+
+这个策略不是“自动追着最好结果不停训练”，而是一个有限状态机：每次续训都有证据、有独立产物、有总轮数上限；平台化、回落、OOM/NaN 或精度收益不足时立即停止。
+
+## FastHead 50e 最终结果
+
+| 指标 | 200e baseline | FastHead 50e | 变化 |
+|---|---:|---:|---:|
+| 参数量 | 4,005,986 | 3,018,722 | -24.64% |
+| fused 参数量 | 3,992,210 | 3,006,098 | -24.70% |
+| checkpoint | 8.42 MB | 6.10 MB | -27.55% |
+| Box mAP50-95 | 0.66761 | 0.55303 | -0.11458 |
+| Pose mAP50-95 | 0.51455 | 0.37569 | -0.13886 |
+| PCK@0.05 | 0.66863 | 0.56017 | -0.10846 |
+| PCK@0.10 | 0.85248 | 0.80219 | -0.05029 |
+| NME | 0.05960 | 0.07635 | +0.01675 |
+| fused FP16 latency | 5.6955 ms | 5.3314 ms | -6.39% |
+
+计时条件完全一致：RTX 3090 Ti、640、batch1、one-to-one-only、Conv/BN fuse、FP16、100 次 warmup、3×1000 次。FastHead 只通过参数和速度门禁，未通过精度门禁，因此不替换 200e baseline。
+
+## 为什么精度下降明显
+
+“模型本身已经很小”是主要原因，但不是唯一原因：
+
+- baseline 仅约 4.0M 参数，冗余远少于中大型模型；FastHead 一次减少 24.64% 总参数；
+- Head 是关键点定位、可见性与框回归的高敏感区域，容量下降直接影响细粒度空间表达；
+- 结构改变后只能迁移同形权重，新隐藏层无法完整继承 baseline 表示；
+- 当前 KD 以输出为主，不能完整补偿中间特征、几何关系和关键点局部结构；
+- 50e 曲线虽仍有学习信号，但精度差距已远大于门禁，继续堆 epoch 不符合成本和风险边界；
+- 32 通道候选更小却更慢，说明 GPU Kernel 和通道对齐同时限制了“继续缩头”的部署收益。
+
+## 具体耗时瓶颈
+
+绝对延迟使用无 Hook 的正式 benchmark；模块级 CUDA Event 会引入插桩开销，因此只用于阶段占比。顶层模块剖析如下：
+
+| 阶段 | Baseline | FastHead | FastHead 占比 |
+|---|---:|---:|---:|
+| Backbone | 2.9275 ms | 2.6824 ms | 44.92% |
+| Neck | 1.6575 ms | 1.5957 ms | 26.72% |
+| Detect + Pose Head | 2.1431 ms | 1.6933 ms | 28.36% |
+
+FastHead 中 Backbone + Neck 合计 71.64%，已经成为主瓶颈；Head 仍是最大单模块。Head 参数从 2.156M 降至 1.170M，减少 45.73%，但 Head 模块时间只减少约 20.99%。这说明剩余延迟受访存、小 Kernel 启动、算子调度和硬件利用率影响，不能继续按参数比例估算。
+
+下一轮可行优先级：
+
+1. 在独立配置中验证 PSA 与 C2f/C2fCIB 的轻量替换，并保持关键点 Head 容量；
+2. 导出 TensorRT 后检查层融合、Kernel 选择和 FP16 Tensor Core 对齐；
+3. 对 Backbone/Neck 候选继续执行“参数/FLOPs/真实延迟/完整精度”四门禁；
+4. 若继续蒸馏，增加特征与几何蒸馏，但只有结构本身先通过延迟门禁才值得训练。
+
+复现模块级占比（该结果不作为正式绝对延迟）：
+
+```bash
+.venv/bin/python benchmarks/profile_module_latency.py \
+  --checkpoint /path/to/best.pt \
+  --device cuda:0 --imgsz 640 --warmup 100 --iterations 200 \
+  --output reports/benchmark/module_profile_fp16.json
+```
+
+原始证据位于 `reports/benchmark/fasthead_final_50e/`、`reports/fasthead/final_50e/`，汇总见 `reports/fasthead/final_50e/final_report.md`。

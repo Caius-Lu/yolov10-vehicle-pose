@@ -1,0 +1,29 @@
+# One-epoch plumbing gate before the full-data FastHead recovery run.
+pruned_weights: outputs/fasthead/fasthead64_boxd1_init.pt
+teacher_weights: vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt
+data: ultralytics/cfg/datasets/CarFusion-pose-smoke.yaml
+project: vehicle_pose_runs_fasthead
+name: carfusion_yolov10n_fasthead64_boxd1_kd_smoke
+
+epochs: 1
+batch: 8
+imgsz: 640
+teacher_imgsz: 640
+distill_weight: 0.25
+temperature: 2.0
+detection_distill_weight: 1.0
+pose_distill_weight: 1.0
+device: 0
+workers: 2
+seed: 0
+fraction: 1.0
+optimizer: SGD
+lr0: 0.0002
+lrf: 0.1
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 0.0
+mosaic: 0.0
+translate: 0.0
+scale: 0.0
+fliplr: 0.0

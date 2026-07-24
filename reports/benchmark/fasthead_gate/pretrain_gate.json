@@ -1,0 +1,327 @@
+{
+  "environment": {
+    "device": "NVIDIA GeForce RTX 3090 Ti",
+    "torch": "2.6.0+cu124",
+    "precision": "fused FP16",
+    "batch": 1,
+    "imgsz": 640,
+    "path": "one-to-one-only"
+  },
+  "thresholds": {
+    "min_parameter_reduction_pct": 10.0,
+    "min_gflops_reduction_pct": 8.0,
+    "min_latency_reduction_pct": 5.0
+  },
+  "models": {
+    "baseline": {
+      "parameters": 4005986,
+      "gflops": 9.380352,
+      "config": "ultralytics/cfg/models/v10/yolov10n-vehicle-pose.yaml",
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.996509702682495,
+          "std_ms": 0.5166961437580061,
+          "min_ms": 5.3736958503723145,
+          "max_ms": 10.390527725219727,
+          "p50_ms": 5.832304000854492,
+          "p90_ms": 6.610716819763184,
+          "p95_ms": 6.841907095909118,
+          "p99_ms": 7.9194013881683345,
+          "fps_from_mean": 166.763675801718,
+          "round": 1,
+          "order": [
+            "baseline",
+            "head96d1",
+            "head64d2",
+            "head64d1"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.977036865234375,
+          "std_ms": 0.5053283282661369,
+          "min_ms": 5.356351852416992,
+          "max_ms": 9.090047836303711,
+          "p50_ms": 5.811200141906738,
+          "p90_ms": 6.662332677841187,
+          "p95_ms": 6.945772743225097,
+          "p99_ms": 7.883918905258178,
+          "fps_from_mean": 167.30698212964552,
+          "round": 2,
+          "order": [
+            "head64d1",
+            "head64d2",
+            "head96d1",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 6.447783874034881,
+          "std_ms": 1.6606508879289472,
+          "min_ms": 5.352447986602783,
+          "max_ms": 15.203392028808594,
+          "p50_ms": 5.892048120498657,
+          "p90_ms": 7.4364896774292,
+          "p95_ms": 10.199518108367892,
+          "p99_ms": 13.619364614486694,
+          "fps_from_mean": 155.09204705619607,
+          "round": 3,
+          "order": [
+            "baseline",
+            "head96d1",
+            "head64d2",
+            "head64d1"
+          ]
+        }
+      ],
+      "mean_latency_ms": 6.1404434806505845
+    },
+    "head96d1": {
+      "parameters": 3507170,
+      "gflops": 7.9804416,
+      "config": "ultralytics/cfg/models/v10/yolov10n-vehicle-pose-head96d1.yaml",
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.806457541942597,
+          "std_ms": 0.5473696183707916,
+          "min_ms": 5.239871978759766,
+          "max_ms": 12.28713607788086,
+          "p50_ms": 5.632896184921265,
+          "p90_ms": 6.42876787185669,
+          "p95_ms": 6.828289604187011,
+          "p99_ms": 7.649432711601257,
+          "fps_from_mean": 172.22204636416615,
+          "round": 1,
+          "order": [
+            "baseline",
+            "head96d1",
+            "head64d2",
+            "head64d1"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.777218329429626,
+          "std_ms": 0.44880173004792007,
+          "min_ms": 5.171199798583984,
+          "max_ms": 9.203712463378906,
+          "p50_ms": 5.644287824630737,
+          "p90_ms": 6.38162899017334,
+          "p95_ms": 6.575052785873413,
+          "p99_ms": 7.422420892715454,
+          "fps_from_mean": 173.09368332263256,
+          "round": 2,
+          "order": [
+            "head64d1",
+            "head64d2",
+            "head96d1",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 6.527108771324158,
+          "std_ms": 2.103771385977994,
+          "min_ms": 5.1906561851501465,
+          "max_ms": 15.39788818359375,
+          "p50_ms": 5.731264114379883,
+          "p90_ms": 9.315827560424804,
+          "p95_ms": 12.761292934417725,
+          "p99_ms": 13.916135082244873,
+          "fps_from_mean": 153.20719096843388,
+          "round": 3,
+          "order": [
+            "baseline",
+            "head96d1",
+            "head64d2",
+            "head64d1"
+          ]
+        }
+      ],
+      "mean_latency_ms": 6.036928214232127
+    },
+    "head64d2": {
+      "parameters": 3462626,
+      "gflops": 8.1664512,
+      "config": "ultralytics/cfg/models/v10/yolov10n-vehicle-pose-head64d2.yaml",
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.978640861988068,
+          "std_ms": 0.4538415252116714,
+          "min_ms": 5.277696132659912,
+          "max_ms": 9.051199913024902,
+          "p50_ms": 5.832127809524536,
+          "p90_ms": 6.595773029327392,
+          "p95_ms": 6.865152144432067,
+          "p99_ms": 7.63188241481781,
+          "fps_from_mean": 167.26209569769534,
+          "round": 1,
+          "order": [
+            "baseline",
+            "head96d1",
+            "head64d2",
+            "head64d1"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 6.006553246021271,
+          "std_ms": 0.488603110924324,
+          "min_ms": 5.249983787536621,
+          "max_ms": 9.987071990966797,
+          "p50_ms": 5.847519874572754,
+          "p90_ms": 6.6748414039611825,
+          "p95_ms": 6.952990245819091,
+          "p99_ms": 7.605219082832336,
+          "fps_from_mean": 166.48483065764847,
+          "round": 2,
+          "order": [
+            "head64d1",
+            "head64d2",
+            "head96d1",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 6.034482529163361,
+          "std_ms": 0.8841992116755113,
+          "min_ms": 5.312511920928955,
+          "max_ms": 15.458304405212402,
+          "p50_ms": 5.813248157501221,
+          "p90_ms": 6.630694341659546,
+          "p95_ms": 7.038003158569335,
+          "p99_ms": 8.250788259506205,
+          "fps_from_mean": 165.71429201546516,
+          "round": 3,
+          "order": [
+            "baseline",
+            "head96d1",
+            "head64d2",
+            "head64d1"
+          ]
+        }
+      ],
+      "mean_latency_ms": 6.006558879057567
+    },
+    "head64d1": {
+      "parameters": 3240674,
+      "gflops": 7.5428352,
+      "config": "ultralytics/cfg/models/v10/yolov10n-vehicle-pose-fasthead.yaml",
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.853828157901764,
+          "std_ms": 0.6724780029595128,
+          "min_ms": 5.038080215454102,
+          "max_ms": 14.009599685668945,
+          "p50_ms": 5.663232088088989,
+          "p90_ms": 6.50457272529602,
+          "p95_ms": 6.84144628047943,
+          "p99_ms": 8.128396520614624,
+          "fps_from_mean": 170.8283832435625,
+          "round": 1,
+          "order": [
+            "baseline",
+            "head96d1",
+            "head64d2",
+            "head64d1"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.833453536510468,
+          "std_ms": 0.5077663589664189,
+          "min_ms": 5.215231895446777,
+          "max_ms": 8.938495635986328,
+          "p50_ms": 5.672976016998291,
+          "p90_ms": 6.504537534713744,
+          "p95_ms": 6.72272617816925,
+          "p99_ms": 7.891228904724121,
+          "fps_from_mean": 171.42503899982947,
+          "round": 2,
+          "order": [
+            "head64d1",
+            "head64d2",
+            "head96d1",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 6.153853889465332,
+          "std_ms": 1.3889653788819702,
+          "min_ms": 5.224448204040527,
+          "max_ms": 14.230527877807617,
+          "p50_ms": 5.737472057342529,
+          "p90_ms": 6.773644828796387,
+          "p95_ms": 8.100198078155517,
+          "p99_ms": 13.450106134414673,
+          "fps_from_mean": 162.49979573156284,
+          "round": 3,
+          "order": [
+            "baseline",
+            "head96d1",
+            "head64d2",
+            "head64d1"
+          ]
+        }
+      ],
+      "mean_latency_ms": 5.947045194625854
+    }
+  },
+  "decisions": {
+    "head96d1": {
+      "train_allowed": false,
+      "failed_gates": [
+        "latency"
+      ],
+      "improvement_pct": {
+        "parameters": 12.45176593228234,
+        "gflops": 14.92385786802031,
+        "latency": 1.6857946294050123
+      },
+      "required_improvement_pct": {
+        "parameters": 10.0,
+        "gflops": 8.0,
+        "latency": 5.0
+      }
+    },
+    "head64d2": {
+      "train_allowed": false,
+      "failed_gates": [
+        "latency"
+      ],
+      "improvement_pct": {
+        "parameters": 13.563701920076603,
+        "gflops": 12.940887506140506,
+        "latency": 2.1803734862947084
+      },
+      "required_improvement_pct": {
+        "parameters": 10.0,
+        "gflops": 8.0,
+        "latency": 5.0
+      }
+    },
+    "head64d1": {
+      "train_allowed": false,
+      "failed_gates": [
+        "latency"
+      ],
+      "improvement_pct": {
+        "parameters": 19.10421054891355,
+        "gflops": 19.588996233830038,
+        "latency": 3.14958173027984
+      },
+      "required_improvement_pct": {
+        "parameters": 10.0,
+        "gflops": 8.0,
+        "latency": 5.0
+      }
+    }
+  }
+}

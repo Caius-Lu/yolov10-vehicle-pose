@@ -429,6 +429,12 @@ def upgrade_for_pruning_distillation(model, teacher, config=None):
 
     if not isinstance(model, YOLOv10PoseModel):
         raise TypeError("student must be a YOLOv10PoseModel")
+    # A trainer checkpoint may contain a criterion created during an earlier
+    # validation pass. Criterion tensors are not model buffers, so loading the
+    # checkpoint and then moving the student to CUDA leaves them on CPU.
+    # Rebuild the criterion lazily after the trainer has placed the model.
+    if hasattr(model, "criterion"):
+        delattr(model, "criterion")
     if not isinstance(model, YOLOv10PosePruningDistillationModel):
         model.__class__ = YOLOv10PosePruningDistillationModel
     if "last_distillation_loss" not in model._buffers:
