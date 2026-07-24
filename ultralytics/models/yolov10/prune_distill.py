@@ -51,6 +51,8 @@ class OutputDistillationConfig:
     temperature: float = 2.0
     detection_weight: float = 1.0
     pose_weight: float = 1.0
+    feature_weight: float = 0.0
+    feature_layers: tuple[int, ...] = ()
 
     def __post_init__(self):
         if self.weight < 0:
@@ -61,6 +63,12 @@ class OutputDistillationConfig:
             raise ValueError("temperature must be positive")
         if self.detection_weight < 0 or self.pose_weight < 0:
             raise ValueError("detection and pose distillation weights must be non-negative")
+        if self.feature_weight < 0:
+            raise ValueError("feature_weight must be non-negative")
+        if self.feature_weight > 0 and not self.feature_layers:
+            raise ValueError("feature_layers must be non-empty when feature_weight is positive")
+        if any(int(index) < 0 for index in self.feature_layers):
+            raise ValueError("feature_layers must contain non-negative model indices")
 
 
 def count_parameters(model):
@@ -348,6 +356,42 @@ def pose_output_distillation_loss(
     return torch.stack(losses).mean()
 
 
+def feature_distillation_loss(student_features, teacher_features):
+    """Return scale-invariant feature KD loss for matching intermediate tensors."""
+
+    if len(student_features) != len(teacher_features) or not student_features:
+        raise ValueError("student and teacher feature lists must have the same non-zero length")
+    losses = []
+    for student, teacher in zip(student_features, teacher_features):
+        if not isinstance(student, torch.Tensor) or not isinstance(teacher, torch.Tensor):
+            raise TypeError("distillation features must be tensors")
+        if student.shape != teacher.shape or student.ndim != 4:
+            raise ValueError(
+                f"feature shape mismatch: {tuple(student.shape)} vs {tuple(teacher.shape)}"
+            )
+        student_normalized = F.normalize(student.float(), dim=1)
+        teacher_normalized = F.normalize(teacher.detach().float(), dim=1)
+        losses.append(F.mse_loss(student_normalized, teacher_normalized) * student.shape[1])
+    return torch.stack(losses).mean()
+
+
+@contextmanager
+def _captured_features(model, layer_indices):
+    """Capture selected sequential model outputs without retaining hooks."""
+
+    outputs = []
+    handles = []
+    for index in layer_indices:
+        if index >= len(model.model) - 1:
+            raise ValueError(f"feature layer index {index} must refer to Backbone/Neck")
+        handles.append(model.model[index].register_forward_hook(lambda _module, _inputs, output: outputs.append(output)))
+    try:
+        yield outputs
+    finally:
+        for handle in handles:
+            handle.remove()
+
+
 @contextmanager
 def _raw_teacher_predictions(model):
     """Make only the YOLO head emit training-format raw tensors; keep teacher BN frozen."""
@@ -395,7 +439,8 @@ class YOLOv10PosePruningDistillationModel(YOLOv10PoseModel):
             self.last_distillation_loss.zero_()
             return super().loss(batch, preds)
 
-        student_predictions = self.forward(batch["img"])
+        with _captured_features(self, config.feature_layers) as student_features:
+            student_predictions = self.forward(batch["img"])
         supervised_loss, loss_items = super().loss(batch, student_predictions)
         teacher_image = batch["img"]
         if teacher_image.shape[-2:] != (config.teacher_imgsz, config.teacher_imgsz):
@@ -408,7 +453,9 @@ class YOLOv10PosePruningDistillationModel(YOLOv10PoseModel):
         if teacher_image.shape[-2:] != batch["img"].shape[-2:]:
             raise ValueError("pruning distillation requires teacher_imgsz to match the student training resolution")
         teacher.eval()
-        with torch.no_grad(), _raw_teacher_predictions(teacher):
+        with torch.no_grad(), _raw_teacher_predictions(teacher), _captured_features(
+            teacher, config.feature_layers
+        ) as teacher_features:
             teacher_predictions = teacher(teacher_image)
         distillation_loss = pose_output_distillation_loss(
             student_predictions,
@@ -420,7 +467,16 @@ class YOLOv10PosePruningDistillationModel(YOLOv10PoseModel):
             pose_weight=config.pose_weight,
         )
         self.last_distillation_loss.copy_(distillation_loss.detach())
-        total_loss = supervised_loss + config.weight * distillation_loss * batch["img"].shape[0]
+        if config.feature_weight > 0:
+            intermediate_loss = feature_distillation_loss(student_features, teacher_features)
+        else:
+            intermediate_loss = distillation_loss.new_zeros(())
+        self.last_feature_distillation_loss.copy_(intermediate_loss.detach())
+        total_loss = (
+            supervised_loss
+            + config.weight * distillation_loss * batch["img"].shape[0]
+            + config.feature_weight * intermediate_loss * batch["img"].shape[0]
+        )
         return total_loss, loss_items
 
 
@@ -439,6 +495,8 @@ def upgrade_for_pruning_distillation(model, teacher, config=None):
         model.__class__ = YOLOv10PosePruningDistillationModel
     if "last_distillation_loss" not in model._buffers:
         model.register_buffer("last_distillation_loss", torch.tensor(0.0), persistent=False)
+    if "last_feature_distillation_loss" not in model._buffers:
+        model.register_buffer("last_feature_distillation_loss", torch.tensor(0.0), persistent=False)
     model.__dict__["distillation_teacher"] = None
     model.distillation_config = None
     return model.configure_output_distillation(teacher, config)

@@ -1,0 +1,50 @@
+{
+  "experiment": "litepsa_c2f_p4d1_adaptive_60e",
+  "decision": {
+    "continue_to_80_epochs": false,
+    "reason": "r3 only marginally improved Pose/PCK/NME and did not exceed the r2 Box envelope",
+    "deployment_recommendation": "latency-constrained candidate; retain baseline for accuracy-first use"
+  },
+  "baseline": {
+    "epochs": 200,
+    "box_map50_95": 0.66761,
+    "pose_map50_95": 0.51455,
+    "pck_005": 0.66863,
+    "pck_010": 0.85248,
+    "nme": 0.05960,
+    "parameters": 4005986,
+    "parameters_fused": 3992210,
+    "checkpoint_bytes": 8422070,
+    "fp16_mean_ms": 5.557817684491475,
+    "fp16_p50_mean_ms": 5.3985973199208575,
+    "fp16_p95_mean_ms": 6.45509173075358,
+    "fps": 179.92673685399905
+  },
+  "candidate": {
+    "epochs_total": 60,
+    "selected_run_epoch": 8,
+    "box_map50_95": 0.65616,
+    "pose_map50_95": 0.48395,
+    "pck_005": 0.64315,
+    "pck_010": 0.83195,
+    "nme": 0.06572,
+    "parameters": 3842914,
+    "parameters_fused": 3829778,
+    "checkpoint_bytes": 8025577,
+    "fp16_mean_ms": 5.205583884716034,
+    "fp16_p50_mean_ms": 5.046490589777629,
+    "fp16_p95_mean_ms": 6.138255961736043,
+    "fps": 192.10140920715378
+  },
+  "improvement": {
+    "parameter_reduction_pct": 4.070708185200847,
+    "checkpoint_reduction_pct": 4.707785615650309,
+    "latency_reduction_pct": 6.337627820328004,
+    "speedup": 1.0676646093072528
+  },
+  "evidence": {
+    "candidate_benchmark": "reports/benchmark/backbone_neck_final_60e/litepsa_c2f_60e_fused_fp16.json",
+    "baseline_benchmark": "reports/benchmark/backbone_neck_final_60e/baseline200_fused_fp16.json",
+    "candidate_results": "vehicle_pose_runs_backbone_neck/carfusion_yolov10n_litepsa_c2f_p4d1_kd_adaptive_60e_r3/results.csv"
+  }
+}

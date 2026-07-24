@@ -52,6 +52,7 @@ from ultralytics.nn.modules import (
     Silence,
     C2fCIB,
     PSA,
+    LitePSA,
     SCDown,
     RepVGGDW,
     v10Detect,
@@ -926,6 +927,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             C3x,
             RepC3,
             PSA,
+            LitePSA,
             SCDown,
             C2fCIB
         }:

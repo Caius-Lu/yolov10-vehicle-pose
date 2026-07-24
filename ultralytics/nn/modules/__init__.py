@@ -47,6 +47,7 @@ from .block import (
     CBLinear,
     Silence,
     PSA,
+    LitePSA,
     C2fCIB,
     SCDown,
     RepVGGDW
@@ -140,6 +141,7 @@ __all__ = (
     "CBLinear",
     "Silence",
     "PSA",
+    "LitePSA",
     "C2fCIB",
     "SCDown",
     "RepVGGDW",

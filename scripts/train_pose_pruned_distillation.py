@@ -85,6 +85,8 @@ def main():
         temperature=float(settings.pop("temperature", 2.0)),
         detection_weight=float(settings.pop("detection_distill_weight", 1.0)),
         pose_weight=float(settings.pop("pose_distill_weight", 1.0)),
+        feature_weight=float(settings.pop("feature_distill_weight", 0.0)),
+        feature_layers=tuple(int(index) for index in settings.pop("feature_distill_layers", ())),
     )
     settings.update(
         task="pose",
@@ -120,6 +122,8 @@ def main():
             "temperature": distillation_config.temperature,
             "detection_distill_weight": distillation_config.detection_weight,
             "pose_distill_weight": distillation_config.pose_weight,
+            "feature_distill_weight": distillation_config.feature_weight,
+            "feature_distill_layers": list(distillation_config.feature_layers),
         },
     )
     trainer.train()

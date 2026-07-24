@@ -15,6 +15,7 @@ from ultralytics.models.yolov10.prune_distill import (
     collect_ignored_root_layers,
     collect_prunable_root_layers,
     count_parameters,
+    feature_distillation_loss,
     pose_output_distillation_loss,
     upgrade_for_pruning_distillation,
 )
@@ -75,14 +76,42 @@ def test_pruning_config_rejects_destructive_or_invalid_settings():
 
 
 def test_output_distillation_config_validates_weights_and_resolution():
-    config = OutputDistillationConfig(weight=0.25, teacher_imgsz=640, temperature=2.0)
+    config = OutputDistillationConfig(
+        weight=0.25,
+        teacher_imgsz=640,
+        temperature=2.0,
+        feature_weight=0.5,
+        feature_layers=(4, 6, 8, 13, 16, 19, 22),
+    )
     assert config.weight == 0.25
+    assert config.feature_weight == 0.5
+    assert config.feature_layers[-1] == 22
     with pytest.raises(ValueError, match="weight"):
         OutputDistillationConfig(weight=-0.1)
     with pytest.raises(ValueError, match="teacher_imgsz"):
         OutputDistillationConfig(teacher_imgsz=0)
     with pytest.raises(ValueError, match="temperature"):
         OutputDistillationConfig(temperature=0)
+    with pytest.raises(ValueError, match="feature_weight"):
+        OutputDistillationConfig(feature_weight=-0.1)
+    with pytest.raises(ValueError, match="feature_layers"):
+        OutputDistillationConfig(feature_weight=0.5, feature_layers=())
+
+
+def test_feature_distillation_is_normalized_and_only_backpropagates_into_student():
+    student = [torch.randn(2, channels, 8, 8, requires_grad=True) for channels in (64, 128, 256)]
+    teacher = [tensor.detach().clone().requires_grad_(True) for tensor in student]
+
+    identical = feature_distillation_loss(student, teacher)
+    assert identical.item() == pytest.approx(0.0, abs=1e-7)
+
+    teacher = [torch.randn_like(tensor, requires_grad=True) for tensor in student]
+    loss = feature_distillation_loss(student, teacher)
+    loss.backward()
+
+    assert torch.isfinite(loss) and loss.item() > 0
+    assert all(tensor.grad is not None for tensor in student)
+    assert all(tensor.grad is None for tensor in teacher)
 
 
 def test_output_distillation_is_zero_for_identical_raw_predictions():

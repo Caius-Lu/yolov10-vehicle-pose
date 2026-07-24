@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a speed-gated FastHead checkpoint from the converged 200-epoch baseline."""
+"""Build a speed-gated architecture checkpoint from the converged 200-epoch baseline."""
 
 import argparse
 import json
@@ -58,7 +58,7 @@ def main():
         smoke_finite=bool(torch.isfinite(prediction).all()),
     )
     if not report["smoke_finite"]:
-        raise RuntimeError("transferred FastHead produced non-finite outputs")
+        raise RuntimeError("transferred architecture candidate produced non-finite outputs")
     student.model[-1].one2one_only = False
     student.cpu().float()
     output.parent.mkdir(parents=True, exist_ok=True)

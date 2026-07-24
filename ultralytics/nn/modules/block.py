@@ -273,8 +273,8 @@ class RepC3(nn.Module):
         """Initialize CSP Bottleneck with a single convolution using input channels, output channels, and number."""
         super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c2, 1, 1)
-        self.cv2 = Conv(c1, c2, 1, 1)
+        self.cv1 = Conv(c1, c_, 1, 1)
+        self.cv2 = Conv(c1, c_, 1, 1)
         self.m = nn.Sequential(*[RepConv(c_, c_) for _ in range(n)])
         self.cv3 = Conv(c_, c2, 1, 1) if c_ != c2 else nn.Identity()
 
@@ -816,6 +816,37 @@ class PSA(nn.Module):
         b = b + self.attn(b)
         b = b + self.ffn(b)
         return self.cv2(torch.cat((a, b), 1))
+
+
+class LitePSA(nn.Module):
+    """Linear-complexity PSA replacement using depthwise spatial mixing and a compact FFN."""
+
+    def __init__(self, c1, c2, e=0.5, kernel_size=5):
+        super().__init__()
+        if c1 != c2:
+            raise ValueError("LitePSA requires identical input and output channels")
+        if not 0 < e <= 1:
+            raise ValueError("LitePSA expansion e must be in (0, 1]")
+        if kernel_size <= 0 or kernel_size % 2 == 0:
+            raise ValueError("LitePSA kernel_size must be a positive odd integer")
+        self.c = int(c1 * e)
+        if self.c <= 0:
+            raise ValueError("LitePSA hidden channels must be positive")
+        self.cv1 = Conv(c1, 2 * self.c, 1, 1)
+        self.cv2 = Conv(2 * self.c, c1, 1)
+        self.spatial = Conv(self.c, self.c, kernel_size, 1, g=self.c)
+        self.ffn = nn.Sequential(
+            Conv(self.c, self.c, 1),
+            Conv(self.c, self.c, 1, act=False),
+        )
+
+    def forward(self, x):
+        """Mix local spatial context while preserving the PSA split/residual contract."""
+        a, b = self.cv1(x).split((self.c, self.c), dim=1)
+        b = b + self.spatial(b)
+        b = b + self.ffn(b)
+        return self.cv2(torch.cat((a, b), 1))
+
 
 class SCDown(nn.Module):
     def __init__(self, c1, c2, k, s):

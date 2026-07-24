@@ -186,6 +186,8 @@ WANDB_MODE=disabled .venv/bin/python scripts/train_pose_pruned_distillation.py \
 
 模块级 CUDA Event 仅用于占比分析：FastHead 的 Backbone + Neck 已占 71.6% 顶层模块时间；Head 参数减少 45.7%，Head 时间却只减少约 21.0%。因此参数量与 GPU 延迟不线性，继续压缩 Pose Head 会扩大精度损失，下一轮速度优化应优先验证 PSA、C2f/C2fCIB、TensorRT/Kernel 融合。完整结果与边界见 [最终报告](reports/fasthead/final_50e/final_report.md)。
 
+FastHead、LitePSA+C2f 和 Joint RepC3 三条压缩线的最终取舍、真实 checkpoint 配对测速与下一轮硬门槛已汇总在[压缩实验归档](reports/EXPERIMENT_SUMMARY_20260724.md)。后续候选必须同时满足 Box/Pose mAP50-95 各自相对 baseline 的绝对损失不超过 `0.02`，且在同次配对 benchmark 中 fused FP16 延迟至少下降 `10%`；未满足前不得替换 baseline。
+
 ## 测试
 
 ```bash
