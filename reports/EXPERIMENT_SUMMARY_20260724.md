@@ -44,6 +44,17 @@ Joint RepC3 的失败也说明，速度目标不能通过一次替换多处特�
 
 启动训练前必须重新执行配对 fused FP16 benchmark；仅当候选相对同次 baseline 至少快 10%，才从 200e baseline 权重初始化一个独立 10e run。10e 后仅在 Box 与 Pose 都有可信恢复趋势、且仍可能达到本报告顶部的两条精度下限时，再用独立 checkpoint 追加训练。否则立即停止。
 
+## 2026-07-27 最终更新
+
+保守 `e=0.4375 + Head96` 候选通过 10.81% 延迟门禁，但 10 epoch 仅恢复到
+Box/Pose mAP50-95 0.47036/0.25717。追加段运行两轮后联合指标进入平台并停止。
+宽度缩放替代候选未过 10% 延迟门禁；更激进的 `e=0.375` 候选虽勉强过线，
+但没有合理的精度恢复依据，未启动训练。
+
+因此结构压缩路线最终不交付模型，生产建议保持已完成全量精度验证的
+baseline + one-to-one-only + Conv/BN fuse + FP16。完整决策见
+`reports/conservative10/final_decision_20260727.md`。
+
 ## 原始证据
 
 - `reports/fasthead/final_50e/final_report.md`

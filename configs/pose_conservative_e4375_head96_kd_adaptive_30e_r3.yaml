@@ -1,0 +1,35 @@
+# Bounded continuation after the conservative 10-epoch gate passed the
+# 10% paired fused-FP16 latency requirement and improved at every epoch.
+# This independent run starts from the gate's best checkpoint and adds
+# 20 epochs, bringing the evidence chain to 30 cumulative epochs.
+pruned_weights: vehicle_pose_runs_conservative10/carfusion_yolov10n_e4375_head96_kd_gate10e_r2/weights/best.pt
+teacher_weights: vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt
+data: reports/training/runtime_configs/CarFusion-pose.yaml
+project: vehicle_pose_runs_conservative10
+name: carfusion_yolov10n_e4375_head96_kd_adaptive_30e_r3
+
+epochs: 20
+batch: 64
+imgsz: 640
+teacher_imgsz: 640
+distill_weight: 0.15
+temperature: 2.0
+detection_distill_weight: 1.0
+pose_distill_weight: 2.0
+feature_distill_weight: 0.15
+feature_distill_layers: [4, 6, 8, 10, 13, 16, 19, 22]
+device: 0
+workers: 8
+seed: 0
+fraction: 1.0
+
+optimizer: SGD
+lr0: 0.0001
+lrf: 0.1
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 0.5
+mosaic: 0.0
+translate: 0.05
+scale: 0.2
+fliplr: 0.0

@@ -125,3 +125,36 @@ ssh ubuntu-ts 'nohup bash -lc "等待精确文件大小后运行 run_carfusion_p
 - 为该资源修复新增测试，先观察到 `PruningConfig` 缺少 `measure_macs` 的红灯，再实施最小修改；最终远程聚焦测试 11/11 通过（0.82 秒），并确认没有遗留剪枝/安装进程。
 - 随后仅用单张 64×64 虚拟输入、CUDA、`/tmp` 输出和 90 秒硬上限执行一次真实 DepGraph smoke。构图未在上限内完成，命令以 timeout 124 终止且无结果文件；没有读取 CarFusion、没有训练、没有宣称已生成可用剪枝模型。完整剪枝、恢复训练、精度和 latency 对比均尚未运行。
 - 最终将 Vehicle Pose 核心回归与新增剪枝测试合并执行，20/20 通过（1.43 秒）；再次确认远程无剪枝/安装残留进程，`/tmp` 下不存在剪枝 checkpoint 或报告。
+
+## 2026-07-27：保守结构恢复、替代门禁与最终回退
+
+- `e=0.4375 + Head96` 在 RTX 3090 Ti、640、batch=1、one-to-one-only、
+  fuse、FP16、3×1000 次配对门禁中从 6.0370 ms 降至 5.3843 ms，
+  加速 10.81%，参数/GFLOPs 分别下降 12.65%/13.92%，允许进入 10 epoch 恢复。
+- 10 epoch 最终 Box/Pose mAP50-95 为 0.47036/0.25717，远低于
+  0.64761/0.49455 准入线。追加段启动时曾阻塞在 WSL `p9_client_rpc`，
+  未报 CUDA/OOM；约 3 分钟后自行恢复并正常扫描数据缓存。
+- 独立追加段前两轮为 Box 0.47616→0.47320、Pose 0.25831→0.26233，
+  PCK@0.05 0.45983→0.45893，NME 0.09306→0.09349。联合指标进入平台且
+  剩余预算不可能接近准入线，因此发送 TERM 停止；best/last、CSV 和日志保留。
+- 聚焦架构/迁移/门禁测试 27/27 通过（2.72 秒）。
+- 最终执行 `scripts/validate_project.sh`：核心回归 29/29 通过（1.00 秒），
+  checkpoint 迁移输出 shape 相同、max/mean absolute error 均为 0；
+  随后的真实 CarFusion 树检查持续 6 分钟阻塞在 WSL `p9_client_rpc`，
+  无测试断言、CUDA、OOM 或数据质量错误。为避免无期限占用，精确终止
+  validation 父进程及 `check_carfusion.py` 子进程，并保留为受环境 I/O 阻塞的
+  部分验证，不将 `validate_project.sh` 记作完整 PASS。
+- 替代门禁第一次运行因缺少 `PYTHONPATH` 失败并保留错误；设置
+  `PYTHONPATH=.` 后成功。w=0.875/w=0.75 仅加速 8.08%/6.82%，速度门禁失败；
+  e=0.375 Head96/Head88 加速 10.33%/10.55%，但结构比已无法恢复的 e=0.4375
+  更激进，按证据停止、不启动训练。
+- 最终回退到既有完整精度门禁通过的 baseline one-to-one-only + fuse + FP16
+  部署方案，不提交或宣称结构压缩 checkpoint 可交付。
+
+### 已执行命令（脱敏）
+
+```bash
+.venv/bin/python -m pytest -q tests/test_joint_latency_candidates.py tests/test_fasthead_transfer.py tests/test_pretrain_architecture_gate.py
+.venv/bin/python scripts/train_pose_pruned_distillation.py --config configs/pose_conservative_e4375_head96_kd_adaptive_30e_r3.yaml
+PYTHONPATH=. .venv/bin/python benchmarks/pretrain_architecture_gate.py --baseline ... --candidate ... --min-latency-reduction-pct 10
+```

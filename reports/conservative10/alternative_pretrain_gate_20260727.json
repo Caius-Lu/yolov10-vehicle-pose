@@ -1,0 +1,419 @@
+{
+  "environment": {
+    "device": "NVIDIA GeForce RTX 3090 Ti",
+    "torch": "2.6.0+cu124",
+    "precision": "fused FP16",
+    "batch": 1,
+    "imgsz": 640,
+    "path": "one-to-one-only"
+  },
+  "thresholds": {
+    "min_parameter_reduction_pct": 0.0,
+    "min_gflops_reduction_pct": 0.0,
+    "min_latency_reduction_pct": 10.0
+  },
+  "models": {
+    "baseline": {
+      "parameters": 4005986,
+      "gflops": 9.380352,
+      "config": "ultralytics/cfg/models/v10/yolov10n-vehicle-pose.yaml",
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 6.197699456214905,
+          "std_ms": 0.6363246628755584,
+          "min_ms": 5.2705278396606445,
+          "max_ms": 11.053343772888184,
+          "p50_ms": 6.029360055923462,
+          "p90_ms": 6.973622560501099,
+          "p95_ms": 7.370847868919372,
+          "p99_ms": 8.48396262168884,
+          "fps_from_mean": 161.35019244878418,
+          "round": 1,
+          "order": [
+            "baseline",
+            "w875_head96",
+            "w75_head96",
+            "e375_head96",
+            "e375_head88"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 6.095447010040283,
+          "std_ms": 0.5425050602271259,
+          "min_ms": 5.382143974304199,
+          "max_ms": 10.689760208129883,
+          "p50_ms": 5.92740797996521,
+          "p90_ms": 6.8036480903625485,
+          "p95_ms": 7.072367858886718,
+          "p99_ms": 7.708256835937498,
+          "fps_from_mean": 164.0568769366418,
+          "round": 2,
+          "order": [
+            "e375_head88",
+            "e375_head96",
+            "w75_head96",
+            "w875_head96",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 6.061083424091339,
+          "std_ms": 0.4930724219759758,
+          "min_ms": 5.339136123657227,
+          "max_ms": 10.534912109375,
+          "p50_ms": 5.91155219078064,
+          "p90_ms": 6.716313457489014,
+          "p95_ms": 6.98199827671051,
+          "p99_ms": 7.526642441749573,
+          "fps_from_mean": 164.98700480267968,
+          "round": 3,
+          "order": [
+            "baseline",
+            "w875_head96",
+            "w75_head96",
+            "e375_head96",
+            "e375_head88"
+          ]
+        }
+      ],
+      "mean_latency_ms": 6.118076630115509
+    },
+    "w875_head96": {
+      "parameters": 3116146,
+      "gflops": 7.4549376,
+      "config": "ultralytics/cfg/models/v10/yolov10n-vehicle-pose-joint-w875-head96.yaml",
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.602650273799896,
+          "std_ms": 0.47180807986184253,
+          "min_ms": 4.904928207397461,
+          "max_ms": 8.513376235961914,
+          "p50_ms": 5.459343910217285,
+          "p90_ms": 6.3230495929718025,
+          "p95_ms": 6.524036598205567,
+          "p99_ms": 7.136303730010987,
+          "fps_from_mean": 178.4869572667023,
+          "round": 1,
+          "order": [
+            "baseline",
+            "w875_head96",
+            "w75_head96",
+            "e375_head96",
+            "e375_head88"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.584454338550568,
+          "std_ms": 0.46150233826957715,
+          "min_ms": 4.924160003662109,
+          "max_ms": 8.012800216674805,
+          "p50_ms": 5.431375980377197,
+          "p90_ms": 6.266982412338257,
+          "p95_ms": 6.490214228630066,
+          "p99_ms": 7.0427433872222895,
+          "fps_from_mean": 179.06852476110453,
+          "round": 2,
+          "order": [
+            "e375_head88",
+            "e375_head96",
+            "w75_head96",
+            "w875_head96",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.683707835674286,
+          "std_ms": 0.6340212627281919,
+          "min_ms": 4.877471923828125,
+          "max_ms": 12.9617919921875,
+          "p50_ms": 5.499423980712891,
+          "p90_ms": 6.377856016159058,
+          "p95_ms": 6.68581292629242,
+          "p99_ms": 7.873771629333495,
+          "fps_from_mean": 175.94148554283757,
+          "round": 3,
+          "order": [
+            "baseline",
+            "w875_head96",
+            "w75_head96",
+            "e375_head96",
+            "e375_head88"
+          ]
+        }
+      ],
+      "mean_latency_ms": 5.623604149341584
+    },
+    "w75_head96": {
+      "parameters": 2584706,
+      "gflops": 6.3428864,
+      "config": "ultralytics/cfg/models/v10/yolov10n-vehicle-pose-joint-w75-head96.yaml",
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.758542268276215,
+          "std_ms": 0.6362838292699764,
+          "min_ms": 5.025631904602051,
+          "max_ms": 13.446399688720703,
+          "p50_ms": 5.553103923797607,
+          "p90_ms": 6.512230587005616,
+          "p95_ms": 6.818047952651977,
+          "p99_ms": 7.711129417419432,
+          "fps_from_mean": 173.65505945992544,
+          "round": 1,
+          "order": [
+            "baseline",
+            "w875_head96",
+            "w75_head96",
+            "e375_head96",
+            "e375_head88"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.7054441876411435,
+          "std_ms": 0.6358925389463725,
+          "min_ms": 5.007552146911621,
+          "max_ms": 13.554752349853516,
+          "p50_ms": 5.517951965332031,
+          "p90_ms": 6.40250244140625,
+          "p95_ms": 6.6521488904953,
+          "p99_ms": 7.708333883285522,
+          "fps_from_mean": 175.27119135897456,
+          "round": 2,
+          "order": [
+            "e375_head88",
+            "e375_head96",
+            "w75_head96",
+            "w875_head96",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.638742181777954,
+          "std_ms": 0.5229571765512744,
+          "min_ms": 4.837376117706299,
+          "max_ms": 9.254624366760254,
+          "p50_ms": 5.466624021530151,
+          "p90_ms": 6.393856048583984,
+          "p95_ms": 6.616310477256775,
+          "p99_ms": 7.2686273574829094,
+          "fps_from_mean": 177.34451545445364,
+          "round": 3,
+          "order": [
+            "baseline",
+            "w875_head96",
+            "w75_head96",
+            "e375_head96",
+            "e375_head88"
+          ]
+        }
+      ],
+      "mean_latency_ms": 5.700909545898438
+    },
+    "e375_head96": {
+      "parameters": 3387298,
+      "gflops": 7.7535744,
+      "config": "ultralytics/cfg/models/v10/yolov10n-vehicle-pose-joint-e375-head96.yaml",
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.499407646656036,
+          "std_ms": 0.5097660577120675,
+          "min_ms": 4.774911880493164,
+          "max_ms": 10.11404800415039,
+          "p50_ms": 5.317504167556763,
+          "p90_ms": 6.231961584091187,
+          "p95_ms": 6.455654430389403,
+          "p99_ms": 7.011215333938598,
+          "fps_from_mean": 181.83776585612068,
+          "round": 1,
+          "order": [
+            "baseline",
+            "w875_head96",
+            "w75_head96",
+            "e375_head96",
+            "e375_head88"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.542712833881378,
+          "std_ms": 0.5068184124766211,
+          "min_ms": 4.933663845062256,
+          "max_ms": 8.654879570007324,
+          "p50_ms": 5.38374400138855,
+          "p90_ms": 6.272403049468994,
+          "p95_ms": 6.523817563056945,
+          "p99_ms": 7.2291225242614745,
+          "fps_from_mean": 180.417068314855,
+          "round": 2,
+          "order": [
+            "e375_head88",
+            "e375_head96",
+            "w75_head96",
+            "w875_head96",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.416215265274048,
+          "std_ms": 0.4682892939489896,
+          "min_ms": 4.821280002593994,
+          "max_ms": 9.876607894897461,
+          "p50_ms": 5.278208017349243,
+          "p90_ms": 6.111231803894043,
+          "p95_ms": 6.286540746688843,
+          "p99_ms": 6.811847467422485,
+          "fps_from_mean": 184.630770939161,
+          "round": 3,
+          "order": [
+            "baseline",
+            "w875_head96",
+            "w75_head96",
+            "e375_head96",
+            "e375_head88"
+          ]
+        }
+      ],
+      "mean_latency_ms": 5.486111915270487
+    },
+    "e375_head88": {
+      "parameters": 3241090,
+      "gflops": 7.4210688,
+      "config": "ultralytics/cfg/models/v10/yolov10n-vehicle-pose-joint-e375-head88.yaml",
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.486501148223877,
+          "std_ms": 0.481531119991746,
+          "min_ms": 4.805535793304443,
+          "max_ms": 7.813119888305664,
+          "p50_ms": 5.318671941757202,
+          "p90_ms": 6.18376317024231,
+          "p95_ms": 6.4786125898361195,
+          "p99_ms": 7.115929417610167,
+          "fps_from_mean": 182.26552277743093,
+          "round": 1,
+          "order": [
+            "baseline",
+            "w875_head96",
+            "w75_head96",
+            "e375_head96",
+            "e375_head88"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.4707826242446895,
+          "std_ms": 0.4828786021451797,
+          "min_ms": 4.802559852600098,
+          "max_ms": 8.20751953125,
+          "p50_ms": 5.30022406578064,
+          "p90_ms": 6.142476797103882,
+          "p95_ms": 6.34880177974701,
+          "p99_ms": 7.20010103225708,
+          "fps_from_mean": 182.7892037911235,
+          "round": 2,
+          "order": [
+            "e375_head88",
+            "e375_head96",
+            "w75_head96",
+            "w875_head96",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.460141992568969,
+          "std_ms": 0.5172725810669472,
+          "min_ms": 4.751359939575195,
+          "max_ms": 9.439231872558594,
+          "p50_ms": 5.29204797744751,
+          "p90_ms": 6.242492961883545,
+          "p95_ms": 6.489334464073181,
+          "p99_ms": 7.120287246704101,
+          "fps_from_mean": 183.14542027679119,
+          "round": 3,
+          "order": [
+            "baseline",
+            "w875_head96",
+            "w75_head96",
+            "e375_head96",
+            "e375_head88"
+          ]
+        }
+      ],
+      "mean_latency_ms": 5.472475255012512
+    }
+  },
+  "decisions": {
+    "w875_head96": {
+      "train_allowed": false,
+      "failed_gates": [
+        "latency"
+      ],
+      "improvement_pct": {
+        "parameters": 22.212758606745005,
+        "gflops": 20.526035696741445,
+        "latency": 8.082155727503366
+      },
+      "required_improvement_pct": {
+        "parameters": 0.0,
+        "gflops": 0.0,
+        "latency": 10.0
+      }
+    },
+    "w75_head96": {
+      "train_allowed": false,
+      "failed_gates": [
+        "latency"
+      ],
+      "improvement_pct": {
+        "parameters": 35.47890581744419,
+        "gflops": 32.38114731728617,
+        "latency": 6.818598547190728
+      },
+      "required_improvement_pct": {
+        "parameters": 0.0,
+        "gflops": 0.0,
+        "latency": 10.0
+      }
+    },
+    "e375_head96": {
+      "train_allowed": true,
+      "failed_gates": [],
+      "improvement_pct": {
+        "parameters": 15.444087922424094,
+        "gflops": 17.342393974128054,
+        "latency": 10.329467135704881
+      },
+      "required_improvement_pct": {
+        "parameters": 0.0,
+        "gflops": 0.0,
+        "latency": 10.0
+      }
+    },
+    "e375_head88": {
+      "train_allowed": true,
+      "failed_gates": [],
+      "improvement_pct": {
+        "parameters": 19.093826089257426,
+        "gflops": 20.887096774193555,
+        "latency": 10.552358431162844
+      },
+      "required_improvement_pct": {
+        "parameters": 0.0,
+        "gflops": 0.0,
+        "latency": 10.0
+      }
+    }
+  }
+}
