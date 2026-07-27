@@ -607,6 +607,8 @@ class v10Pose(v10Detect):
         one2one_keypoints = self._forward_keypoints(one2one_features, self.one2one_cv4)
 
         run_one2many = self.training or (not self.export and not self.one2one_only)
+        if getattr(self, "one2many_deployment_pruned", False) and run_one2many:
+            raise RuntimeError("one-to-many branches were removed from this deployment-only model")
         one2many_detections = self.forward_feat(x, self.cv2, self.cv3) if run_one2many else None
         one2many_keypoints = self._forward_keypoints(x, self.cv4) if run_one2many else None
 

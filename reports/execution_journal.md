@@ -158,3 +158,47 @@ ssh ubuntu-ts 'nohup bash -lc "等待精确文件大小后运行 run_carfusion_p
 .venv/bin/python scripts/train_pose_pruned_distillation.py --config configs/pose_conservative_e4375_head96_kd_adaptive_30e_r3.yaml
 PYTHONPATH=. .venv/bin/python benchmarks/pretrain_architecture_gate.py --baseline ... --candidate ... --min-latency-reduction-pct 10
 ```
+
+## 2026-07-27：PyTorch 结构化剪枝搜索与部署分支裁剪
+
+- 用户明确要求继续压缩剪枝且不涉及 TensorRT；本轮没有执行或实现 TensorRT。
+- 启动搜索前发现上次 TERM 主训练进程后遗留 4 个 PPID=1 的孤儿子进程，
+  占用约 15.5 GB 显存。结果 CSV 仍只有 2 个完整 epoch；精确终止 4 个子进程
+  和监控进程后显存回落到 999 MiB。
+- 新增 paired whole-checkpoint fused-FP16 benchmark，避免把单模型
+  FP32→FP16 收益误算为剪枝收益。TDD 红灯为缺少 helper 的导入失败；
+  实现后剪枝与 benchmark 回归 22/22 通过。
+- `round_to=32` 的三组 Backbone/Head 比例请求被量化成同一个 29.80% 参数
+  缩减结构；paired latency 从 6.0396 ms 变为 6.0663 ms，慢 0.44%，不训练。
+- 按模块剖析新增 `model_indices` 剪枝根白名单。TDD 先得到 2 个预期失败，
+  实现后相关回归 23/23 通过。只剪索引 4/6/10/13/16/19/22、保护 Head 的
+  25%/35% 候选分别减少 1.98%/3.03% 参数，但慢 0.27%/0.93%，不训练。
+- 转向部署分支物理裁剪：删除 one-to-many `cv2/cv3/cv4`，保留完整
+  one-to-one 分支。TDD 红灯后实现，Vehicle Pose/剪枝/benchmark 回归
+  30/30 通过。
+- 真实 baseline checkpoint 裁剪后参数从 4,005,986 降到 2,925,857
+  （-26.96%），文件从 8,422,070 B 降到 6,182,717 B（-26.59%）；
+  640 dense output 逐元素完全相同，max/mean error 均为 0。
+- paired fused-FP16 latency 为 5.8359→5.8247 ms（快 0.19%）。
+  因此只把它认定为模型体积/内存压缩，不宣称显著 latency 优化。
+- 用两个独立进程测量 fused-FP16 CUDA 内存：模型加载 allocated
+  57,721,856→51,245,056 B（-11.22%），含输入 60,179,456→53,702,656 B
+  （-10.76%），推理峰值 72,237,568→65,742,336 B（-8.99%）；
+  参数/缓冲 tensor 存储 7,984,420→5,828,130 B（-27.01%）。
+- 完整 3,606 图验证通过：Box/Pose mAP50-95 0.665/0.514，
+  PCK@0.05 0.66769、PCK@0.10 0.85236、NME 0.05970，与既有 fused-FP16
+  baseline 保持一致。
+- checkpoint 为 deployment-only，误用于训练或 one-to-many 执行会显式报错；
+  权重不入库，脚本和 JSON 证据入库。
+- 最终 `scripts/validate_project.sh` 的代码/模型阶段为 31/31 通过（1.19 秒），
+  checkpoint 迁移输出 shape 相同且 max/mean error 为 0。随后重复的
+  CarFusion 原始树检查再次阻塞在 WSL `p9_client_rpc`，在无断言、CUDA、
+  OOM 或数据质量错误的情况下精确终止；不把整条脚本标为完整 PASS。
+
+### 已执行命令（脱敏）
+
+```bash
+.venv/bin/python scripts/prune_vehicle_pose.py --model-indices 4,6,10,13,16,19,22 ...
+PYTHONPATH=. .venv/bin/python benchmarks/benchmark_deploy_fp16.py --checkpoint BASELINE --candidate-checkpoint CANDIDATE ...
+PYTHONPATH=. .venv/bin/python scripts/prune_deployment_branches.py --checkpoint BASELINE --output DEPLOYMENT_ONLY ...
+```

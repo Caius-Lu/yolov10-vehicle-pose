@@ -17,6 +17,7 @@ from ultralytics.models.yolov10.prune_distill import (
     count_parameters,
     feature_distillation_loss,
     pose_output_distillation_loss,
+    prune_one2many_deployment_branches,
     upgrade_for_pruning_distillation,
 )
 from ultralytics.nn.tasks import YOLOv10PoseModel
@@ -73,6 +74,10 @@ def test_pruning_config_rejects_destructive_or_invalid_settings():
         PruningConfig(pruning_ratio=0.15, head_pruning_ratio=-0.01)
     with pytest.raises(ValueError, match="head_pruning_ratio"):
         PruningConfig(pruning_ratio=0.15, head_pruning_ratio=0.5)
+    with pytest.raises(ValueError, match="model_indices"):
+        PruningConfig(pruning_ratio=0.15, model_indices=(-1,))
+    with pytest.raises(ValueError, match="model_indices"):
+        PruningConfig(pruning_ratio=0.15, model_indices=(4, 4))
 
 
 def test_output_distillation_config_validates_weights_and_resolution():
@@ -183,6 +188,27 @@ def test_head_hidden_roots_can_be_fully_protected_for_accuracy_repair():
     assert head_hidden.issubset(set(collect_ignored_root_layers(model, protected_head_roots)))
 
 
+def test_backbone_neck_pruning_roots_can_be_limited_to_profiled_model_indices():
+    model = YOLOv10PoseModel(POSE_CFG, verbose=False)
+
+    roots = collect_prunable_root_layers(
+        model,
+        include_head_hidden=False,
+        model_indices=(4, 6, 10, 13, 16, 19, 22),
+    )
+
+    assert len(roots) == 7
+    assert roots == [
+        model.model[4].cv2.conv,
+        model.model[6].cv2.conv,
+        model.model[10].cv2.conv,
+        model.model[13].cv2.conv,
+        model.model[16].cv2.conv,
+        model.model[19].cv2.conv,
+        model.model[22].cv2.conv,
+    ]
+
+
 def test_pruning_report_requires_real_structural_reduction():
     baseline = torch.nn.Sequential(torch.nn.Conv2d(3, 8, 3), torch.nn.Conv2d(8, 4, 1))
     pruned = torch.nn.Sequential(torch.nn.Conv2d(3, 4, 3), torch.nn.Conv2d(4, 4, 1))
@@ -249,3 +275,28 @@ def test_pruned_checkpoint_drops_stale_loss_criterion_before_recovery_training()
     )
 
     assert not hasattr(checkpoint["model"], "criterion")
+
+
+def test_deployment_branch_pruning_preserves_one2one_output_and_removes_parameters():
+    baseline = YOLOv10PoseModel(POSE_CFG, verbose=False).eval()
+    baseline.model[-1].one2one_only = True
+    image = torch.randn(1, 3, 64, 64)
+    with torch.inference_mode():
+        expected = baseline(image)["one2one"][0]
+    parameters_before = count_parameters(baseline)
+
+    pruned, report = prune_one2many_deployment_branches(deepcopy(baseline))
+
+    with torch.inference_mode():
+        actual = pruned(image)["one2one"][0]
+    assert torch.equal(actual, expected)
+    assert report["parameters_before"] == parameters_before
+    assert report["parameters_after"] == count_parameters(pruned) < parameters_before
+    assert report["deployment_only"] is True
+    head = pruned.model[-1]
+    assert not head.cv2 and not head.cv3 and not head.cv4
+    assert head.one2one_only is True
+
+    pruned.train()
+    with pytest.raises(RuntimeError, match="deployment-only"):
+        pruned(image)

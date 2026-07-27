@@ -62,6 +62,11 @@ def parse_args():
     parser.add_argument("--iterative-steps", type=int, default=1)
     parser.add_argument("--round-to", type=int, default=8)
     parser.add_argument("--global-pruning", action="store_true")
+    parser.add_argument(
+        "--model-indices",
+        default="",
+        help="comma-separated Backbone/Neck model indices allowed to start pruning groups",
+    )
     parser.add_argument("--measure-macs", action="store_true", help="also run the slower optional MAC counter")
     parser.add_argument("--device", default="cpu", help="cpu, cuda, or an explicit CUDA device")
     return parser.parse_args()
@@ -93,6 +98,7 @@ def main():
         round_to=args.round_to,
         global_pruning=args.global_pruning,
         measure_macs=args.measure_macs,
+        model_indices=tuple(int(value) for value in args.model_indices.split(",") if value.strip()),
     )
     model, report = structurally_prune_model(model, example, config)
 

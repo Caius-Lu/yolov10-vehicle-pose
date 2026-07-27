@@ -1,0 +1,142 @@
+{
+  "environment": {
+    "device": "NVIDIA GeForce RTX 3090 Ti",
+    "torch": "2.6.0+cu124",
+    "precision": "fused FP16",
+    "batch": 1,
+    "imgsz": 640,
+    "path": "one-to-one-only"
+  },
+  "summary": {
+    "baseline_fused_fp16_ms": 5.835872844219208,
+    "candidate_fused_fp16_ms": 5.824660250663757,
+    "latency_reduction_pct": 0.19213224576264257,
+    "speedup": 1.0019250210437893
+  },
+  "models": {
+    "baseline": {
+      "checkpoint": "vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt",
+      "parameters": 3992210,
+      "dense_shape": [
+        1,
+        47,
+        8400
+      ],
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.8339093418121335,
+          "std_ms": 0.4519474424588262,
+          "min_ms": 5.181471824645996,
+          "max_ms": 8.059103965759277,
+          "p50_ms": 5.6909120082855225,
+          "p90_ms": 6.476809549331665,
+          "p95_ms": 6.715678548812866,
+          "p99_ms": 7.370813298225403,
+          "fps_from_mean": 171.41164550379852,
+          "round": 1,
+          "order": [
+            "baseline",
+            "candidate"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.8053023400306705,
+          "std_ms": 0.5055024963612599,
+          "min_ms": 4.709280014038086,
+          "max_ms": 10.11302375793457,
+          "p50_ms": 5.6320960521698,
+          "p90_ms": 6.466985654830933,
+          "p95_ms": 6.781043338775635,
+          "p99_ms": 7.641342086791991,
+          "fps_from_mean": 172.2563169715493,
+          "round": 2,
+          "order": [
+            "candidate",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.86840685081482,
+          "std_ms": 0.5456029808860676,
+          "min_ms": 5.261087894439697,
+          "max_ms": 10.425344467163086,
+          "p50_ms": 5.676000118255615,
+          "p90_ms": 6.585548639297485,
+          "p95_ms": 6.855139255523681,
+          "p99_ms": 7.795015902519226,
+          "fps_from_mean": 170.40399982853123,
+          "round": 3,
+          "order": [
+            "baseline",
+            "candidate"
+          ]
+        }
+      ]
+    },
+    "candidate": {
+      "checkpoint": "outputs/pruning/deployment_branch_pruned/baseline200_one2one_only.pt",
+      "parameters": 2914065,
+      "dense_shape": [
+        1,
+        47,
+        8400
+      ],
+      "rounds": [
+        {
+          "count": 1000,
+          "mean_ms": 5.913864869594574,
+          "std_ms": 0.5133343112192064,
+          "min_ms": 5.244927883148193,
+          "max_ms": 9.147392272949219,
+          "p50_ms": 5.7384161949157715,
+          "p90_ms": 6.597152185440064,
+          "p95_ms": 6.87988793849945,
+          "p99_ms": 7.611330566406249,
+          "fps_from_mean": 169.09415789011004,
+          "round": 1,
+          "order": [
+            "baseline",
+            "candidate"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.765134718418121,
+          "std_ms": 0.4734054867868662,
+          "min_ms": 5.1220479011535645,
+          "max_ms": 10.003456115722656,
+          "p50_ms": 5.6170079708099365,
+          "p90_ms": 6.348105764389039,
+          "p95_ms": 6.593516898155212,
+          "p99_ms": 7.433359456062317,
+          "fps_from_mean": 173.45648433943052,
+          "round": 2,
+          "order": [
+            "candidate",
+            "baseline"
+          ]
+        },
+        {
+          "count": 1000,
+          "mean_ms": 5.794981163978576,
+          "std_ms": 0.4990593356639824,
+          "min_ms": 5.108736038208008,
+          "max_ms": 9.362591743469238,
+          "p50_ms": 5.6233439445495605,
+          "p90_ms": 6.5006303787231445,
+          "p95_ms": 6.776976108551025,
+          "p99_ms": 7.621189346313476,
+          "fps_from_mean": 172.56311482355957,
+          "round": 3,
+          "order": [
+            "baseline",
+            "candidate"
+          ]
+        }
+      ]
+    }
+  }
+}

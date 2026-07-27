@@ -3,9 +3,10 @@ from pathlib import Path
 import pytest
 import torch
 
-from benchmarks.benchmark_deploy_fp16 import build_model
+from benchmarks.benchmark_deploy_fp16 import build_model, summarize_paired_latency
 from benchmarks.benchmark_end_to_end import load_sources
 from benchmarks.benchmark_torch import describe
+from benchmarks.measure_deploy_memory import parameter_storage_bytes
 from scripts.build_training_manifest import build_manifest
 
 
@@ -58,6 +59,28 @@ def test_deploy_benchmark_loads_whole_model_checkpoint(monkeypatch):
     assert calls == [("pruned.pt", torch.device("cpu"), False)]
     assert loaded.fused is True
     assert loaded.weight.dtype == torch.float16
+
+
+def test_paired_deploy_summary_requires_matching_rounds_and_reports_reduction():
+    summary = summarize_paired_latency([6.0, 6.2, 5.8], [5.4, 5.6, 5.2])
+
+    assert summary["baseline_fused_fp16_ms"] == pytest.approx(6.0)
+    assert summary["candidate_fused_fp16_ms"] == pytest.approx(5.4)
+    assert summary["latency_reduction_pct"] == pytest.approx(10.0)
+    assert summary["speedup"] == pytest.approx(6.0 / 5.4)
+
+    with pytest.raises(ValueError, match="same non-zero"):
+        summarize_paired_latency([6.0], [])
+    with pytest.raises(ValueError, match="positive"):
+        summarize_paired_latency([6.0], [0.0])
+
+
+def test_deploy_memory_counts_parameter_and_buffer_storage():
+    module = torch.nn.BatchNorm2d(4).half()
+
+    expected = sum(tensor.numel() * tensor.element_size() for tensor in [*module.parameters(), *module.buffers()])
+
+    assert parameter_storage_bytes(module) == expected
 
 
 def test_training_manifest_hashes_configs_and_dataset_summaries(tmp_path):

@@ -1,0 +1,36 @@
+{
+  "parameters_before": 4005986,
+  "parameters_after": 2812386,
+  "parameters_removed": 1193600,
+  "parameter_reduction_ratio": 0.297954111671883,
+  "pruning_config": {
+    "pruning_ratio": 0.2,
+    "head_pruning_ratio": 0.1,
+    "iterative_steps": 1,
+    "round_to": 32,
+    "global_pruning": false,
+    "measure_macs": false
+  },
+  "prunable_root_count": 53,
+  "backbone_neck_root_count": 17,
+  "head_hidden_root_count": 36,
+  "head_hidden_pruned_root_count": 36,
+  "ignored_root_count": 73,
+  "protected_output_count": 18,
+  "macs_before": null,
+  "macs_after": null,
+  "source_checkpoint": "/home/caius/projects/yolopose/yolov10-vehicle-pose/vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt",
+  "output_checkpoint": "/home/caius/projects/yolopose/yolov10-vehicle-pose/outputs/pruning/latency_search/b20_h10_r32.pt",
+  "example_shape": [
+    1,
+    3,
+    64,
+    64
+  ],
+  "smoke_output_shape": [
+    1,
+    47,
+    84
+  ],
+  "smoke_finite": true
+}

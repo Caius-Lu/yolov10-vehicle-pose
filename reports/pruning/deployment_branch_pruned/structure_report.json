@@ -1,0 +1,31 @@
+{
+  "parameters_before": 4005986,
+  "parameters_after": 2925857,
+  "parameters_removed": 1080129,
+  "parameter_reduction_ratio": 0.2696287505747649,
+  "pruning_type": "one2many_deployment_branch_removal",
+  "deployment_only": true,
+  "removed_branches": [
+    "cv2",
+    "cv3",
+    "cv4"
+  ],
+  "preserved_branches": [
+    "one2one_cv2",
+    "one2one_cv3",
+    "one2one_cv4"
+  ],
+  "source_checkpoint": "/home/caius/projects/yolopose/yolov10-vehicle-pose/vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt",
+  "output_checkpoint": "/home/caius/projects/yolopose/yolov10-vehicle-pose/outputs/pruning/deployment_branch_pruned/baseline200_one2one_only.pt",
+  "dense_shape": [
+    1,
+    47,
+    8400
+  ],
+  "dense_max_abs_error": 0.0,
+  "dense_mean_abs_error": 0.0,
+  "output_exact": true,
+  "source_checkpoint_bytes": 8422070,
+  "output_checkpoint_bytes": 6182717,
+  "checkpoint_reduction_ratio": 0.2658910457880307
+}

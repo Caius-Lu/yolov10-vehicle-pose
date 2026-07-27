@@ -30,6 +30,7 @@ class PruningConfig:
     round_to: int = 8
     global_pruning: bool = False
     measure_macs: bool = False
+    model_indices: tuple[int, ...] = ()
 
     def __post_init__(self):
         if not 0.0 < self.pruning_ratio < 0.5:
@@ -40,6 +41,10 @@ class PruningConfig:
             raise ValueError("iterative_steps must be positive")
         if self.round_to <= 0:
             raise ValueError("round_to must be positive")
+        if any(int(index) < 0 for index in self.model_indices) or len(set(self.model_indices)) != len(
+            self.model_indices
+        ):
+            raise ValueError("model_indices must contain unique non-negative model indices")
 
 
 @dataclass(frozen=True)
@@ -75,6 +80,33 @@ def count_parameters(model):
     """Return the physical parameter count of a model."""
 
     return sum(parameter.numel() for parameter in model.parameters())
+
+
+def prune_one2many_deployment_branches(model):
+    """Physically remove unused one-to-many pose-head towers from an inference-only model."""
+    if not isinstance(model, YOLOv10PoseModel):
+        raise TypeError("model must be a YOLOv10PoseModel")
+    head = model.model[-1]
+    for name in ("cv2", "cv3", "cv4", "one2one_cv2", "one2one_cv3", "one2one_cv4"):
+        if not hasattr(head, name):
+            raise TypeError(f"pose head is missing required branch {name}")
+    parameters_before = count_parameters(model)
+    head.cv2 = nn.ModuleList()
+    head.cv3 = nn.ModuleList()
+    head.cv4 = nn.ModuleList()
+    head.one2many_deployment_pruned = True
+    head.one2one_only = True
+    model.eval()
+    report = build_pruning_report(
+        parameters_before,
+        count_parameters(model),
+        pruning_type="one2many_deployment_branch_removal",
+        deployment_only=True,
+        removed_branches=["cv2", "cv3", "cv4"],
+        preserved_branches=["one2one_cv2", "one2one_cv3", "one2one_cv4"],
+    )
+    model.pruning_metadata = report
+    return model, report
 
 
 def build_pruning_report(parameters_before, parameters_after, **extra):
@@ -123,7 +155,7 @@ def _head_hidden_convolutions(head):
     return roots
 
 
-def collect_prunable_root_layers(model, include_head_hidden=True):
+def collect_prunable_root_layers(model, include_head_hidden=True, model_indices=()):
     """Select conservative roots whose output width has no stale split attribute.
 
     Internal C2f/PSA split convolutions and depthwise roots are deliberately not
@@ -133,7 +165,10 @@ def collect_prunable_root_layers(model, include_head_hidden=True):
     if not isinstance(model, YOLOv10PoseModel):
         raise TypeError("model must be a YOLOv10PoseModel")
     roots = []
-    for block in model.model[:-1]:
+    selected_indices = set(model_indices)
+    for index, block in enumerate(model.model[:-1]):
+        if selected_indices and index not in selected_indices:
+            continue
         if isinstance(block, Conv) and block.conv.groups == 1:
             roots.append(block.conv)
         elif isinstance(block, (C2f, C2fCIB)):
@@ -189,8 +224,16 @@ def structurally_prune_model(model, example_input, config=None, pruning_backend=
     head = model.model[-1]
     protected = collect_head_output_layers(head)
     protected_widths = [layer.out_channels for layer in protected]
-    backbone_neck_roots = collect_prunable_root_layers(model, include_head_hidden=False)
-    all_roots = collect_prunable_root_layers(model, include_head_hidden=True)
+    backbone_neck_roots = collect_prunable_root_layers(
+        model,
+        include_head_hidden=False,
+        model_indices=config.model_indices,
+    )
+    all_roots = collect_prunable_root_layers(
+        model,
+        include_head_hidden=True,
+        model_indices=config.model_indices,
+    )
     backbone_neck_ids = {id(layer) for layer in backbone_neck_roots}
     head_hidden_roots = [layer for layer in all_roots if id(layer) not in backbone_neck_ids]
     head_ratio = config.pruning_ratio if config.head_pruning_ratio is None else config.head_pruning_ratio
