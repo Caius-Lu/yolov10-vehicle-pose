@@ -3,7 +3,7 @@
  * Backward-compatible PPTX/PDF build entry point.
  *
  * Run render-slides.mjs first when data or layout changes. Speaker notes are
- * populated from prompts/*.md to preserve the slide-generation context.
+ * populated from speaker-notes/*.md; prompts/*.md remain a legacy fallback.
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,4 +16,4 @@ const result = await buildDeckArtifacts({
   metadata: DECK_DATA.metadata,
   basePromptPath: "/Users/caius/.agents/skills/baoyu-slide-deck/references/base-prompt.md",
 });
-console.log(`created ${result.slides}-slide PPTX and PDF`);
+console.log(`created ${result.slides}-slide PPTX, PDF, and speaker script`);

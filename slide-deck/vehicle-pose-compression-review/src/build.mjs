@@ -16,6 +16,7 @@ export function findSlideImages(directory) {
       path: path.join(directory, filename),
       index: Number.parseInt(filename.slice(0, 2), 10),
       promptPath: path.join(directory, "prompts", filename.replace(/\.png$/i, ".md")),
+      speakerNotePath: path.join(directory, "speaker-notes", filename.replace(/\.png$/i, ".md")),
     }))
     .sort((a, b) => a.index - b.index);
 
@@ -50,11 +51,19 @@ export async function buildDeckArtifacts({
   pptx.subject = metadata.subject;
   pptx.title = metadata.title;
   pptx.lang = metadata.language;
+  const speakerSections = [];
   for (const item of slides) {
     const slide = pptx.addSlide();
     slide.background = { color: "FAF8F5" };
     slide.addImage({ path: item.path, x: 0, y: 0, w: 13.333333, h: 7.5 });
-    if (existsSync(item.promptPath)) {
+
+    // Speaker notes take precedence over image-generation prompts. The prompt
+    // fallback keeps this builder reusable for older decks without a script.
+    if (existsSync(item.speakerNotePath)) {
+      const speakerNote = readFileSync(item.speakerNotePath, "utf8").trim();
+      slide.addNotes(speakerNote);
+      speakerSections.push(speakerNote);
+    } else if (existsSync(item.promptPath)) {
       const prompt = readFileSync(item.promptPath, "utf8");
       slide.addNotes(basePrompt ? `${basePrompt}\n\n---\n\n${prompt}` : prompt);
     }
@@ -73,5 +82,17 @@ export async function buildDeckArtifacts({
   }
   const pdfPath = path.join(directory, `${basename}.pdf`);
   writeFileSync(pdfPath, await pdf.save());
-  return { slides: slides.length, pptxPath, pdfPath };
+
+  // Keep a printable/editable script next to the deck. Its content is generated
+  // from the same per-slide notes embedded in PowerPoint to prevent drift.
+  const speakerScriptPath = path.join(directory, "speaker-script.md");
+  if (speakerSections.length > 0) {
+    writeFileSync(
+      speakerScriptPath,
+      `# Vehicle Pose 压缩实验复盘：演讲稿\n\n` +
+        `> 面向算法工程师；建议总时长 8–10 分钟。PPT 演讲者备注与本文同源。\n\n` +
+        `${speakerSections.join("\n\n---\n\n")}\n`,
+    );
+  }
+  return { slides: slides.length, pptxPath, pdfPath, speakerScriptPath };
 }

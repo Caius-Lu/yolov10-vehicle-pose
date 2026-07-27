@@ -34,6 +34,7 @@ node merge-output.mjs
 | 更新指标、门槛、实验结论 | `src/data.mjs` | 单一数据源；内置 PASS/FAIL 一致性校验 |
 | 修改颜色、字体、布局 | `src/render.mjs` | 1600×900 SVG 组件和三页布局 |
 | 修改 PPTX/PDF 合并方式 | `src/build.mjs` | 连续页检查、speaker notes、文档元数据 |
+| 修改现场演讲稿 | `speaker-notes/*.md` | 每页一份；构建时写入 PPT 备注并汇总 |
 | 修改页面叙事 | `outline.md` | 幻灯片目标、文案和视觉说明 |
 | 修改生成提示 | `prompts/*.md` | 每页可追溯的图像生成上下文 |
 | 修改原始长文 | `source-vehicle-pose-compression-review.md` | 完整实验摘要 |
@@ -59,7 +60,9 @@ vehicle-pose-compression-review/
 ├── merge-output.mjs                  # 兼容入口：生成 PPTX/PDF
 ├── analysis.md                       # 内容与受众分析
 ├── outline.md                        # 三页提纲
-├── prompts/                          # 逐页提示，写入 PPT speaker notes
+├── prompts/                          # 逐页图像生成提示与视觉溯源
+├── speaker-notes/                    # 逐页演讲稿：PPT 备注的单一来源
+├── speaker-script.md                 # 构建时自动汇总的完整演讲稿
 ├── 01-slide-*.png                    # 生成结果
 ├── vehicle-pose-compression-review.pptx
 └── vehicle-pose-compression-review.pdf
@@ -71,9 +74,10 @@ vehicle-pose-compression-review/
 2. 修改 `src/data.mjs` 的 `metadata`、`methodology`、`gates`、
    `experimentRows` 和 `bestCandidates`。
 3. 根据新项目调整 `outline.md` 与 `prompts/`。
-4. 运行 `npm run test`。如果手工标注的 PASS/FAIL 与数值门槛冲突，测试会失败。
-5. 运行 `npm run render && npm run build`。
-6. 人工检查三张 PNG 后再分发 PPTX/PDF。
+4. 修改 `speaker-notes/*.md`；保留每页的时长、讲述目标、逐字稿和转场。
+5. 运行 `npm run test`。如果手工标注的 PASS/FAIL 与数值门槛冲突，测试会失败。
+6. 运行 `npm run render && npm run build`。
+7. 人工检查三张 PNG 和 PPT 演讲者备注后再分发。
 
 ## 测试策略
 

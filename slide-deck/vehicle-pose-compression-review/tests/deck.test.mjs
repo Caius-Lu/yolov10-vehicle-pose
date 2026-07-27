@@ -47,6 +47,7 @@ test("build input discovery sorts slides and rejects gaps", () => {
     findSlideImages(directory).map((item) => item.filename),
     ["01-slide-a.png", "02-slide-b.png"],
   );
+  assert.match(findSlideImages(directory)[0].speakerNotePath, /speaker-notes\/01-slide-a\.md$/);
 
   writeFileSync(path.join(directory, "04-slide-gap.png"), "gap");
   assert.throws(() => findSlideImages(directory), /continuous/);

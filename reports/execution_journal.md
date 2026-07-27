@@ -399,3 +399,17 @@ PYTHONPATH=. .venv/bin/pytest -q tests/test_fasthead_transfer.py tests/test_lite
   branch 86.67%、function 92.59%。完整重新渲染及合并成功，PPTX
   `unzip -t` 无错误，PDF 保持 3 页且页面为 1600×900；三页均重新完成
   视觉回归。
+
+### PPT 演讲稿与演讲者备注
+
+- 新增 `speaker-notes/`，按三页分别维护讲述目标、逐字稿、现场措辞边界、
+  常见追问、转场和讨论入口，建议总时长为 8–10 分钟。
+- 修改 `src/build.mjs`：构建时优先将逐页演讲稿写入 PowerPoint speaker
+  notes；旧项目没有演讲稿时才回退到图像 prompt，保持构建器兼容性。
+- 同一构建流程自动生成 `speaker-script.md`，确保可打印演讲稿与 PPT
+  演讲者备注来自同一份逐页源文件，避免二次维护造成内容漂移。
+- 重建后单元测试 4/4 通过，总体 line/branch/function 覆盖率分别为
+  85.07%/86.67%/92.59%；PPTX 压缩包检查无错误，PDF 仍为 3 页
+  1600×900。进一步直接检查 `ppt/notesSlides/*.xml`，确认三页均写入
+  “建议时长”等讲稿内容，并包含 deployment-only、ClassLite52 和最终
+  工程收尾结论。
