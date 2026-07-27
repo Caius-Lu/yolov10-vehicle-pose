@@ -1,0 +1,17 @@
+{
+  "name": "vehicle-pose-compression-review-deck",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/deck.test.mjs",
+    "test:coverage": "node --test --experimental-test-coverage tests/deck.test.mjs",
+    "render": "node render-slides.mjs",
+    "build": "node merge-output.mjs",
+    "all": "npm run test && npm run render && npm run build"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "pptxgenjs": "^4.0.1",
+    "sharp": "^0.34.0"
+  }
+}

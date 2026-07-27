@@ -260,3 +260,142 @@ PYTHONPATH=. .venv/bin/python scripts/prune_deployment_branches.py --checkpoint 
 .venv/bin/yolo pose val model=CANDIDATE data=CarFusion-pose.yaml imgsz=640 half=True
 .venv/bin/python benchmarks/measure_deploy_memory.py --checkpoint CANDIDATE ...
 ```
+
+## 2026-07-27：串行深度压缩（进行中）
+
+- 继续遵守“只做压缩/剪枝、不涉及 TensorRT”。本轮目标为减少真正影响
+  GPU latency 的串行卷积层，而不是继续缩窄通道。
+- 审计既有 e=0.4375+Head96 权重迁移：原方案有 123 个缺失 tensor。
+  新增多维 prefix slicing 后，直接/切片/重映射 tensor 为 495/106/24，
+  缺失降至 17；但完整验证 Box/Pose mAP50-95 仅
+  0.000519/9.72e-8。结论：切片破坏通道语义，不能作为恢复初始化。
+- 改用已完成 60 epoch 恢复的 LitePSA+C2f-P4D1+Head96 模型，只把检测塔
+  深度从 2 降到 1，保持骨干、颈部和姿态塔结构不变。候选参数
+  3,620,962，较源模型 3,842,914 下降 5.78%。
+- paired fused-FP16（独立交替采样）基线/候选为
+  6.20268/5.46363 ms，候选加速 11.915%，通过 10% 延迟门禁。
+- 未训练初始化的完整 3,606 图验证：Pose mAP50-95 为 0.484，和源模型
+  一致；Box mAP50-95 为 0.00916，证明姿态分支权重保持成功，但缩短后的
+  检测塔不能靠简单搬运输出层恢复。
+- 已按 TDD 增加“只解冻匹配参数名前缀”的恢复训练能力。下一阶段只训练
+  cv2/cv3 与 one2one_cv2/one2one_cv3 检测分支，冻结骨干、颈部和 cv4
+  姿态分支，再根据门禁决定是否进入全模型低学习率 KD。
+- 第一次定向恢复在第 1 epoch 将 Box 从 0.00916 恢复至 0.544，但 Pose
+  从 0.484 降至 0.418。定位为冻结参数的 BatchNorm 仍在训练模式更新
+  running mean/variance；第 2 epoch 45% 时主动终止，不把该 checkpoint
+  作为候选。新增冻结 BN 必须使用保存统计的回归测试后，从原始干净 init
+  重新训练。
+- 一次批量 scp 把本轮 7 个文件平铺到远端仓库根目录；逐一 `ls` 核对后只
+  删除这 7 个刚创建的精确副本，并分别同步到正确目录。未删除或覆盖其他
+  根目录文件。
+- 修复冻结 BN 后，检测塔 depth=1 定向恢复 10 epoch 的最好结果约为
+  Box/Pose 0.633/0.474；联合 KD、检测续训和加强 one-to-one KD 均未越过
+  精度门槛，因此拒绝该结构。
+- 姿态塔单独 depth=1 的配对 fused-FP16 加速仅 3.48%，未过 10% 延迟
+  门槛，按预设 gate 未浪费恢复训练。
+- 额外删除 P3 C2f bottleneck 的候选相对原始基线加速 10.56%。简单切片
+  初始化只有 Box/Pose 0.131/0.053；新增残差投影折叠后提升至
+  0.316/0.181。完整 KD 在第 3 epoch 达到最好约 0.634/0.460，之后至
+  第 7 epoch 停滞或回退，主动终止并拒绝。
+- 同时压缩姿态塔和分类塔为 depth=1 可加速 15.47%，但分支恢复从第 1 至
+  第 3 epoch 仅由 0.544/0.227 提升至 0.580/0.366，增幅快速放缓，主动
+  终止。
+- 只压缩分类塔 depth=1 可加速 12.26%。64 通道版本训练至第 7 epoch
+  最高约 0.610/0.452；加宽到 96 通道仍有 12.01% 加速，但最好只有
+  0.61831/0.45890，均因平台期终止。
+- 新增 ClassLite 结构：保留分类塔第一组 depthwise+pointwise，只把第二组
+  替换为 pointwise。64→64 版本加速 9.84%，未过门槛；进一步把第二层输出
+  调为 48 通道后，paired fused-FP16 原始/候选为
+  7.2552/6.3155 ms，加速 12.952%，通过延迟门槛。fused 参数从
+  3,992,210 降至 3,819,602，计算量从 13.6 降至 13.2 GFLOPs。
+- 为结构迁移新增兼容 tensor padding、C2f 输出投影折叠和 ClassLite
+  pointwise 定向搬运；未恢复初始化完整验证约为 0.0368/0.012。
+  使用原始完整模型作为教师、只训练分类分支时，第 1 至第 3 epoch 为
+  0.59436/0.44496、0.60863/0.45501、0.60417/0.45246，继续至第 4 epoch
+  仍无上升后终止。
+- 随后改用具有相同 LitePSA+C2f-P4D1 上游特征的已恢复模型作为教师，
+  避免不同特征分布干扰分类蒸馏。该试验正在执行；第 1 epoch 为
+  Box/Pose 0.60922/0.45343，尚未超过上一试验。
+- 本轮曾误把远端 `ultralytics/models/yolov10/head.py` 作为同步目标创建；
+  用 `ls` 精确核对后只移除这个刚创建的错误文件，正确文件
+  `ultralytics/nn/modules/head.py` 已同步。
+- 新增/更新的结构迁移与轻量模块回归最近一次为 21/21 通过（1.76 秒）；
+  此前选择性训练和冻结 BN 相关集合为 24/24，通过的更大相关集合为
+  36/36。一次命令误引用不存在的 `tests/test_vehicle_pose_head.py` 导致
+  pytest collection 报 file not found，随后改为实际测试文件并通过；该
+  失败不隐藏。
+- 同源教师 ClassLite48 精修第 1–5 epoch 的 Box/Pose 分别为
+  0.60922/0.45343、0.61830/0.46186、0.60278/0.45134、
+  0.61932/0.46163、0.61400/0.45884；第 6 epoch 早期因平台期终止，
+  best 保留第 4 epoch。
+- 为避免把 9.84% 的 64 通道候选算作通过，新增可独立配置
+  `class_lite_channels`。先写 56 通道红灯测试，因配置不存在按预期失败；
+  实现后 ClassLite 相关 2/2 回归通过。ClassLite56 paired fused-FP16
+  基线/候选为 5.93824/5.35292 ms，只快 9.85677%，距门槛 0.14323 个
+  百分点，严格拒绝。
+- ClassLite52 paired fused-FP16 基线/候选为 6.02302/5.38792 ms，
+  加速 10.54459%，通过延迟门槛；fused 参数为 3,821,186。将
+  ClassLite48 best 通过零填充扩宽到 52 通道，36 个 tensor 完整 padding，
+  无 missing/unexpected key；完整 3,606 图热启动验证约为
+  Box/Pose 0.619/0.461。
+- ClassLite52 仅标注监督、无 KD 的恢复首次启动连续约 2 分钟卡在 WSL
+  `p9_client_rpc`；精确终止后重启，第二次也短暂进入相同内核等待但随后
+  自行恢复。该基础设施等待不是 CUDA、OOM 或模型异常。
+- 无 KD 恢复第 1–4 epoch 为 0.61734/0.46079、0.62507/0.46795、
+  0.61133/0.45626、0.61709/0.45866；第 5 epoch 早期终止并保留第 2
+  epoch best。
+- 从该 best 做全模型低学习率、输出+特征 KD 联合精修，第 1–3 epoch 为
+  0.61535/0.45831、0.61750/0.45997、0.61406/0.45722，且训练显存约
+  14.5–14.7 GB；确认骨干/颈部漂移后于第 4 epoch 早期终止。
+- 当前改为只训练分类塔与姿态塔，冻结骨干、颈部及 box tower，并移除
+  feature KD；结构与 10.54459% 延迟结果保持不变。
+- 分类+姿态头、低权重输出 KD 的第 1–2 epoch 为
+  0.61707/0.45844、0.61834/0.46138，仍低于无 KD 分类恢复 best，已在
+  第 3 epoch 早期终止。随后保持相同冻结范围并完全关闭 KD；当前前两轮为
+  训练最终完成 12 轮，最后一轮为 0.62505/0.46712，训练显存约
+  5.8 GB；仍略低于总最佳 0.62507/0.46795，确认该结构在当前监督方式下
+  进入平台。
+- 新增 `reports/kernel_depth/experiment_review_20260727.md`，统一汇总本轮
+  所有主要压缩/剪枝路线、延迟、显存、精度、停止原因与复盘结论。
+
+### 串行深度压缩已执行命令（脱敏）
+
+```bash
+PYTHONPATH=. .venv/bin/python benchmarks/benchmark_deploy_fp16.py --checkpoint BASELINE --candidate-checkpoint CANDIDATE ...
+.venv/bin/python scripts/train_pose_pruned_distillation.py --config configs/POSE_COMPRESSION_EXPERIMENT.yaml
+.venv/bin/yolo pose val model=CANDIDATE data=CarFusion-pose.yaml imgsz=640 half=True
+PYTHONPATH=. .venv/bin/pytest -q tests/test_fasthead_transfer.py tests/test_lite_backbone_blocks.py
+```
+
+## 2026-07-27：三页算法工程复盘 PPT
+
+- 将全部压缩/剪枝路线压缩为 3 页中文技术评审材料，统一采用 blueprint
+  工程网格风格，面向算法工程师。
+- 第 1 页覆盖实验地图与双门禁；第 2 页突出 deployment-only 分支裁剪和
+  ClassLite52 两组最佳方案；第 3 页给出失败机制、可靠性边界与后续决策。
+- PPT 明确区分“精度等价的体积/显存压缩”和“速度过线但精度未过线的研究
+  候选”，没有把两者合并宣称为双门槛成功。
+- 三张 1600×900 幻灯片均完成视觉检查；修复第 2 页底部文字贴边后重新渲染。
+  最终 PPTX 压缩包完整性检查无错误，PDF 为 3 页、页面尺寸 1600×900。
+- 输出目录：
+  `slide-deck/vehicle-pose-compression-review/`，同时保留 source、analysis、
+  outline、逐页 prompts、PNG、PPTX 和 PDF。
+
+### PPT 工程化整理与复用
+
+- 将指标、门禁、候选方案和复盘结论集中到
+  `slide-deck/vehicle-pose-compression-review/src/data.mjs`，后续更新实验
+  数字时无需在三页绘图代码中重复查找和替换。
+- 将渲染与交付物组装拆分为 `src/render.mjs` 和 `src/build.mjs`；顶层
+  `render-slides.mjs`、`merge-output.mjs` 保留为兼容入口，避免既有命令
+  失效。关键约束处已添加注释，包括 paired latency、门禁一致性、连续页码
+  检查和依赖延迟加载。
+- 新增 `README.md`、`docs/metrics-and-gates.md` 和 `package.json`，记录
+  快速重建命令、目录职责、指标口径、复用步骤和更新检查表。
+- 按 TDD 先建立失败测试，再完成模块化实现。`tests/deck.test.mjs` 覆盖：
+  已发布门禁/最佳两组不漂移、拒绝与指标矛盾的 PASS 标签、固定三页
+  1600×900 输出，以及 PNG 页码连续和排序。
+- 单元测试最终 4/4 通过；Node 实验性覆盖率统计为：line 88.52%、
+  branch 86.67%、function 92.59%。完整重新渲染及合并成功，PPTX
+  `unzip -t` 无错误，PDF 保持 3 页且页面为 1600×900；三页均重新完成
+  视觉回归。
