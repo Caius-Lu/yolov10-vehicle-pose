@@ -413,3 +413,48 @@ PYTHONPATH=. .venv/bin/pytest -q tests/test_fasthead_transfer.py tests/test_lite
   1600×900。进一步直接检查 `ppt/notesSlides/*.xml`，确认三页均写入
   “建议时长”等讲稿内容，并包含 deployment-only、ClassLite52 和最终
   工程收尾结论。
+
+## 2026-07-27：P5 串行深度压缩三门禁通过
+
+- 修正门禁解释：候选的最终速度门禁应相对原始完整 baseline 计算；相对
+  LitePSA+C2f-P4D1 同源恢复模型的增量只用于筛选和诊断。该同源模型自身
+  相对原始 baseline 已快 7.21673%。
+- 按 TDD 先新增 P5/P4 结构和卷积核中心裁剪测试并观察预期红灯，再实现模型
+  YAML 与权重迁移逻辑。中心裁剪用于 5×5→3×3 等空间卷积核，通道维仍使用
+  前缀切片；迁移烟测输出 finite。
+- P5-Zero 只移除 backbone layer 8 和 neck layer 22 的内部 C2f
+  bottleneck。迁移 605 个 tensor 直接复制、2 个投影折叠，无
+  missing/unexpected key；student 参数 3,396,962。
+- 其他候选的 paired fused-FP16 结果：
+  P4-neck0+P5-Zero 快 9.25633%，增加 LitePSA k3 后快 8.60052%；
+  P4-both0+P5-Zero 快 10.56234%，但 KD 恢复最好约
+  0.60121/0.41628，确认 P4 容量损失过大后停止。
+- P5-Zero 全模型同源 KD 的第 1–4 epoch 为
+  0.60299/0.43531、0.66245/0.49369、0.65026/0.49116、
+  0.64727/0.48279。第 2 轮 Pose 仅差门槛 0.00086，随后停止全模型训练，
+  改为只训练 Pose tower 的 48 个张量并固定冻结 BN。
+- Pose-only 精修第 1 轮达到 Box/Pose **0.66254/0.49592**，
+  PCK@0.05 0.64399、NME 0.06714，训练显存约 4.47 GB；门禁通过后立即
+  停止第 2 轮，保留 best。
+- 最终 checkpoint 相对原始 baseline 的 paired fused-FP16 延迟为
+  5.94537→5.06345 ms，下降 **14.83371%**、speedup 1.17417；
+  fused 参数 3,992,210→3,387,794，下降 **15.13989%**。
+- 独立进程 CUDA memory：模型驻留 57,721,856→54,093,312 B，
+  下降 **6.28626%**；推理峰值 72,237,568→68,609,024 B，下降
+  **5.02307%**。
+- 最终完整 fused-FP16 验证覆盖 3,606 图、11,569 实例，输出
+  Box/Pose 0.662/0.496；车辆关键点指标 PCK@0.05 0.64366、
+  PCK@0.10 0.82799、NME 0.06729。
+- 首次完整验证因 Ultralytics 联网获取 Arial 字体阻塞在 TLS；将系统字体
+  写入用户字体缓存后用 `workers=0` 完成。另一次 W&B 因绝对 project 路径
+  拒绝启动，改用 `WANDB_MODE=disabled`。两者均为基础设施问题，不计入
+  模型失败。
+- 新增 `reports/kernel_depth/p5zero_balance_result_20260727.md` 与十份
+  机器可读 JSON 证据，并将三页 PPT、演讲稿和 speaker notes 更新为
+  deployment-only 与 P5-Zero 两组可交付结果。全流程不使用 TensorRT。
+- 发布前回归：P5/迁移/选择性训练相关测试 33/33 通过；综合脚本首段
+  31/31 通过，部署输出 shape 相同且 max/mean error=0。随后脚本在
+  CarFusion 数据质量检查阶段 180 秒超时，与本轮多次 WSL `p9_client_rpc`
+  文件系统等待一致；没有把未完成的数据检查宣称为通过。PPT 数据测试 4/4
+  通过，line/branch/function 覆盖率 85.41%/86.36%/92.59%，PPTX 压缩包
+  无错误，PDF 为 3 页 1600×900，三页重新完成视觉检查。

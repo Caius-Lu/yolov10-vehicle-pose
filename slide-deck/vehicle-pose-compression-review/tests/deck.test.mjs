@@ -15,13 +15,15 @@ test("deck data keeps the published gates and the two highlighted candidates", (
   assert.equal(DECK_DATA.gates.minPoseMap, 0.49455);
   assert.deepEqual(
     DECK_DATA.bestCandidates.map((candidate) => candidate.id),
-    ["deployment-only", "classlite52"],
+    ["deployment-only", "p5zero"],
   );
+  assert.equal(DECK_DATA.bestCandidates[1].speedPassed, true);
+  assert.equal(DECK_DATA.bestCandidates[1].accuracyPassed, true);
 });
 
 test("deck data rejects contradictory pass labels", () => {
   const invalid = structuredClone(DECK_DATA);
-  invalid.bestCandidates[1].accuracyPassed = true;
+  invalid.bestCandidates[1].accuracyPassed = false;
 
   assert.throws(() => validateDeckData(invalid), /accuracyPassed/);
 });
@@ -33,7 +35,7 @@ test("renderer produces exactly three 1600x900 slide SVGs", () => {
   for (const slide of slides) {
     assert.match(slide.filename, /^\d{2}-slide-.*\.png$/);
     assert.match(slide.svg, /width="1600" height="900"/);
-    assert.match(slide.svg, /Vehicle Pose|ClassLite52|参数更少/);
+    assert.match(slide.svg, /Vehicle Pose|P5-Zero|参数更少/);
   }
 });
 

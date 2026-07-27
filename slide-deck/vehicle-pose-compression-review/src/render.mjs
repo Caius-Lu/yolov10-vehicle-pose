@@ -90,14 +90,14 @@ function slide1(data) {
   const { methodology, gates, baseline } = data;
   let rowSvg = "";
   rows.forEach((r, i) => {
-    const y = 218 + i * 84;
+    const y = 206 + i * 72;
     rowSvg += `
-      ${rect(82, y, 955, 70, i % 2 ? "#FFFFFF" : "#F8FAFC", C.line, 8)}
-      ${text(104, y + 29, r.category, 19, 750, C.navy)}
-      ${text(104, y + 53, r.variant, 16, 500, C.muted)}
-      ${text(312, y + 29, r.latency, 18, 650, C.text, "start", mono)}
-      ${text(645, y + 45, r.accuracy, 18, 600, C.text)}
-      ${chip(905, y + 19, r.status, r.statusType, 108)}
+      ${rect(82, y, 955, 60, i % 2 ? "#FFFFFF" : "#F8FAFC", C.line, 8)}
+      ${text(104, y + 25, r.category, 18, 750, C.navy)}
+      ${text(104, y + 47, r.variant, 15, 500, C.muted)}
+      ${text(312, y + 25, r.latency, 17, 650, C.text, "start", mono)}
+      ${text(645, y + 39, r.accuracy, 17, 600, C.text)}
+      ${chip(905, y + 14, r.status, r.statusType, 108)}
     `;
   });
   return shell(`
@@ -114,7 +114,7 @@ function slide1(data) {
     ${text(1320, 451, `Pose ≥ ${fixed(gates.minPoseMap)}`, 20, 700, C.text)}
     ${rect(1070, 476, 450, 226, C.navy, C.navy, 12)}
     ${text(1098, 512, "双门禁同时通过", 18, 600, "#BFDBFE")}
-    ${text(1098, 592, "0", 76, 800, C.white, "start", mono)}
+    ${text(1098, 592, "1", 76, 800, C.white, "start", mono)}
     ${text(1165, 588, "个结构候选", 24, 600, C.white)}
     ${text(1098, 644, "参数量不是 GPU latency 的可靠代理", 21, 750, "#FDE68A")}
     ${text(1098, 675, "真正有效：减少串行 kernel / 卷积层", 18, 500, "#E2E8F0")}
@@ -131,11 +131,11 @@ function cardTitle(x, y, tag, titleValue, tagType) {
 }
 
 function slide2(data) {
-  const [deployment, classLite] = data.bestCandidates;
-  const boxGap = data.gates.minBoxMap - classLite.boxMap;
-  const poseGap = data.gates.minPoseMap - classLite.poseMap;
+  const [deployment, balanced] = data.bestCandidates;
+  const boxMargin = balanced.boxMap - data.gates.minBoxMap;
+  const poseMargin = balanced.poseMap - data.gates.minPoseMap;
   return shell(`
-    ${header("两组最佳方案：一组可交付，一组仍是研究候选", "收益目标不同：体积/显存压缩 ≠ 显著延迟优化")}
+    ${header("两组最佳方案：体积优先与速度—精度平衡", "两组均可交付；P5-Zero 首次同时通过精度、速度与显存门禁")}
     ${rect(80, 205, 686, 565, "#F0FDF4", "#86EFAC", 16, 2)}
     ${cardTitle(112, 232, deployment.decision, deployment.label, deployment.decisionType)}
     ${text(112, 336, deployment.description, 18, 500, C.muted)}
@@ -151,24 +151,26 @@ function slide2(data) {
     ${lines(112, 693, ["✓ 立即交付：模型体积 / CUDA 内存优化", "✓ 精度与输出等价，风险边界清晰", "× 不宣称显著 latency 收益"], 20, 30, 550)}
 
     ${rect(834, 205, 686, 565, "#FFFBEB", "#FCD34D", 16, 2)}
-    ${cardTitle(866, 232, classLite.decision, classLite.label, classLite.decisionType)}
-    ${text(866, 336, classLite.description, 18, 500, C.muted)}
-    ${metric(866, 410, fixed(classLite.baselineMs), "baseline ms", C.muted, 34)}
-    ${text(1070, 410, "→", 34, 700, C.amber)}
-    ${metric(1132, 410, fixed(classLite.candidateMs), "candidate ms", C.blue, 34)}
-    ${metric(1375, 410, `−${classLite.latencyReductionPct.toFixed(2)}%`, "paired latency", C.green, 34)}
-    <line x1="866" y1="467" x2="1488" y2="467" stroke="#FCD34D" stroke-width="1.5"/>
-    ${metric(866, 535, `${fixed(classLite.boxMap)} / ${fixed(classLite.poseMap)}`, "最佳 Box / Pose", C.navy, 32)}
-    ${metric(1245, 535, `−${classLite.parameterReductionPct.toFixed(2)}%`, "参数量", C.blue, 32)}
+    ${cardTitle(866, 232, balanced.decision, balanced.label, balanced.decisionType)}
+    ${text(866, 336, balanced.description, 18, 500, C.muted)}
+    ${metric(866, 410, fixed(balanced.baselineMs), "baseline ms", C.muted, 34)}
+    ${text(1070, 410, "→", 34, 700, C.green)}
+    ${metric(1132, 410, fixed(balanced.candidateMs), "candidate ms", C.blue, 34)}
+    ${metric(1375, 410, `−${balanced.latencyReductionPct.toFixed(2)}%`, "paired latency", C.green, 34)}
+    <line x1="866" y1="467" x2="1488" y2="467" stroke="#86EFAC" stroke-width="1.5"/>
+    ${metric(866, 535, `${fixed(balanced.boxMap)} / ${fixed(balanced.poseMap)}`, "最佳 Box / Pose", C.navy, 32)}
+    ${metric(1245, 535, `−${balanced.parameterReductionPct.toFixed(2)}%`, "参数量", C.blue, 32)}
     ${chip(866, 600, "SPEED PASS", "pass", 142)}
-    ${chip(1024, 600, "ACCURACY FAIL", "fail", 170)}
-    ${text(866, 666, "距离精度线", 17, 750, "#B45309")}
-    ${text(866, 704, `Box  −${fixed(boxGap)}`, 22, 700, C.red, "start", mono)}
-    ${text(1115, 704, `Pose  −${fixed(poseGap)}`, 22, 700, C.red, "start", mono)}
-    ${text(866, 744, "12 轮头部监督已确认平台，不应继续重复微调", 19, 650, C.text)}
+    ${chip(1024, 600, "ACCURACY PASS", "pass", 178)}
+    ${chip(1218, 600, "MEMORY PASS", "pass", 164)}
+    ${text(866, 666, "精度余量 / 显存收益", 17, 750, C.green)}
+    ${text(866, 704, `Box +${fixed(boxMargin)}`, 22, 700, C.green, "start", mono)}
+    ${text(1080, 704, `Pose +${fixed(poseMargin)}`, 22, 700, C.green, "start", mono)}
+    ${text(1300, 704, `Peak −${balanced.peakMemoryReductionPct.toFixed(2)}%`, 22, 700, C.green, "start", mono)}
+    ${text(866, 744, "完整 3,606 图验证；paired AB/BA；无 TensorRT", 19, 650, C.text)}
 
     ${rect(246, 804, 1108, 52, C.navy, C.navy, 10)}
-    ${text(800, 837, "决策：SHIP 内存压缩  ·  HOLD ClassLite52 延迟候选", 23, 750, C.white, "middle")}
+    ${text(800, 837, "决策：SHIP deployment-only  ·  SHIP P5-Zero 平衡结构", 23, 750, C.white, "middle")}
   `);
 }
 
@@ -188,7 +190,7 @@ function stage(x, titleValue, number, bullets, accent) {
 function slide3(data) {
   const { methodology, review } = data;
   return shell(`
-    ${header("工程决策：先交付内存压缩，停止重复微调 ClassLite52", "从失败机制出发，形成可复用的模型压缩门禁与下一步搜索策略")}
+    ${header("工程决策：P5-Zero 通过三门禁，进入可复用交付", "从失败机制到成功结构，固化可复用的模型压缩搜索与验证规则")}
     ${text(80, 208, "EVIDENCE → RULES → NEXT SEARCH", 16, 800, C.blue, "start", mono)}
     ${stage(80, "失败机制", "01", review.mechanisms, C.red)}
     ${stage(590, "已证实的工程规则", "02", review.rules, C.blue)}
@@ -207,8 +209,8 @@ function slide3(data) {
     ${text(926, 764, "CSV / JSON / 日志 / 停止原因全部留存", 18, 600, C.text)}
     ${rect(80, 826, 700, 42, C.green, C.green, 8)}
     ${text(430, 854, "SHIP · deployment-only branch pruning", 19, 750, C.white, "middle", mono)}
-    ${rect(800, 826, 720, 42, C.amberBg, C.amber, 8)}
-    ${text(1160, 854, "HOLD · ClassLite52 until accuracy gate passes", 19, 750, "#92400E", "middle", mono)}
+    ${rect(800, 826, 720, 42, C.green, C.green, 8)}
+    ${text(1160, 854, "SHIP · P5-Zero balanced pruning", 19, 750, C.white, "middle", mono)}
   `);
 }
 

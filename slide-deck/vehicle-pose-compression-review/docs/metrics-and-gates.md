@@ -17,7 +17,8 @@
 | Box | mAP50-95 ≥0.64761 |
 | Pose | mAP50-95 ≥0.49455 |
 
-只有三项同时通过才可称为结构压缩最终候选。
+结构候选只有速度与两项精度同时通过，且独立 CUDA memory 不退化，才可称为
+最终候选。
 
 ## 两组重点结果
 
@@ -30,13 +31,13 @@
 - Box/Pose 为 0.665/0.514。
 - paired latency 只下降 0.19%，因此只宣称体积/显存收益。
 
-### ClassLite52
+### P5-Zero 平衡结构
 
-- paired fused-FP16：6.02302→5.38792 ms，下降 10.54459%。
-- 参数量下降约 4.28%。
-- 最佳 Box/Pose 为 0.62507/0.46795。
-- 距离精度线分别差 0.02254/0.02660。
-- 速度通过、精度失败，只能标记为研究候选。
+- paired fused-FP16：5.94537→5.06345 ms，下降 14.83371%。
+- fused 参数量下降 15.13989%。
+- 最佳 Box/Pose 为 0.66254/0.49592。
+- 模型驻留/推理峰值 CUDA memory 下降 6.28626%/5.02307%。
+- 速度、精度和内存均通过，可作为平衡方案交付。
 
 ## 为什么绝对延迟会变化
 
@@ -50,7 +51,7 @@
 
 - [ ] 指标已写入 `src/data.mjs`
 - [ ] `speedPassed`/`accuracyPassed` 与数值门槛一致
-- [ ] source、outline、prompts 中没有残留旧指标
+- [ ] source、outline、prompts 和 speaker notes 中没有残留旧指标
 - [ ] `npm run test:coverage` 通过
 - [ ] PNG 完成人工视觉检查
 - [ ] PPTX `unzip -t` 无错误

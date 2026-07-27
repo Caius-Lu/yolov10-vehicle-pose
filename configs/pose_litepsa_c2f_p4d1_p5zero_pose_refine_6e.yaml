@@ -1,0 +1,36 @@
+# Pose-only final gate from the best dual-P5 recovery checkpoint. Backbone,
+# neck, box, and class towers remain immutable so the 0.66245 Box mAP result
+# and the 14.7% structural latency gain are protected.
+pruned_weights: vehicle_pose_runs_kernel_depth/litepsa_c2f_p4d1_p5zero_kd_gate12e/weights/best.pt
+teacher_weights: vehicle_pose_runs_backbone_neck/carfusion_yolov10n_litepsa_c2f_p4d1_kd_adaptive_60e_r3/weights/best.pt
+data: reports/training/runtime_configs/CarFusion-pose.yaml
+project: vehicle_pose_runs_kernel_depth
+name: litepsa_c2f_p4d1_p5zero_pose_refine_6e
+
+epochs: 6
+batch: 64
+imgsz: 640
+teacher_imgsz: 640
+distill_weight: 0.15
+temperature: 2.0
+detection_distill_weight: 0.0
+pose_distill_weight: 1.5
+feature_distill_weight: 0.0
+trainable_parameter_patterns:
+  - model.23.cv4.
+  - model.23.one2one_cv4.
+device: 0
+workers: 8
+seed: 0
+fraction: 1.0
+
+optimizer: SGD
+lr0: 0.0001
+lrf: 0.1
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 0.0
+mosaic: 0.0
+translate: 0.05
+scale: 0.2
+fliplr: 0.0

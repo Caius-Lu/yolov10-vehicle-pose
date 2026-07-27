@@ -4,6 +4,8 @@
 import argparse
 from pathlib import Path
 
+import torch
+
 from ultralytics.models.yolov10.prune_distill import (
     OutputDistillationConfig,
     upgrade_for_pruning_distillation,
@@ -14,6 +16,36 @@ from ultralytics.utils import LOGGER, yaml_load, yaml_save
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def apply_trainable_parameter_patterns(model, patterns):
+    """Freeze every parameter except names starting with one of the requested prefixes."""
+
+    patterns = tuple(str(pattern) for pattern in patterns)
+    if not patterns:
+        return [name for name, parameter in model.named_parameters() if parameter.requires_grad]
+    trainable = []
+    for name, parameter in model.named_parameters():
+        parameter.requires_grad_(name.startswith(patterns))
+        if parameter.requires_grad:
+            trainable.append(name)
+    if not trainable:
+        raise ValueError(f"trainable_parameter_patterns did not match any model parameters: {patterns}")
+    return trainable
+
+
+def set_frozen_normalization_eval(model):
+    """Keep saved statistics fixed for normalization layers whose affine parameters are frozen."""
+
+    frozen = []
+    for name, module in model.named_modules():
+        if not isinstance(module, torch.nn.modules.batchnorm._BatchNorm):
+            continue
+        parameters = list(module.parameters(recurse=False))
+        if parameters and not any(parameter.requires_grad for parameter in parameters):
+            module.eval()
+            frozen.append(name)
+    return frozen
 
 
 def resolve_project_path(value):
@@ -37,10 +69,19 @@ def load_experiment_config(path):
 class YOLOv10PosePrunedDistillationTrainer(YOLOv10PoseTrainer):
     """Load a whole-model pruned checkpoint without rebuilding its changed shapes."""
 
-    def __init__(self, pruned_weights, teacher_weights, distillation_config, *args, **kwargs):
+    def __init__(
+        self,
+        pruned_weights,
+        teacher_weights,
+        distillation_config,
+        trainable_parameter_patterns=(),
+        *args,
+        **kwargs,
+    ):
         self.pruned_weights = Path(pruned_weights)
         self.teacher_weights = Path(teacher_weights)
         self.distillation_config = distillation_config
+        self.trainable_parameter_patterns = tuple(trainable_parameter_patterns)
         super().__init__(*args, **kwargs)
 
     def setup_model(self):
@@ -53,6 +94,20 @@ class YOLOv10PosePrunedDistillationTrainer(YOLOv10PoseTrainer):
             f"temperature={self.distillation_config.temperature}"
         )
         return checkpoint
+
+    def build_optimizer(self, model, *args, **kwargs):
+        trainable = apply_trainable_parameter_patterns(model, self.trainable_parameter_patterns)
+        if self.trainable_parameter_patterns:
+            LOGGER.info(
+                f"Selective recovery enabled: {len(trainable)} trainable tensors matching "
+                f"{self.trainable_parameter_patterns}"
+            )
+        return super().build_optimizer(model, *args, **kwargs)
+
+    def preprocess_batch(self, batch):
+        if self.trainable_parameter_patterns:
+            set_frozen_normalization_eval(self.model)
+        return super().preprocess_batch(batch)
 
 
 def parse_args():
@@ -76,6 +131,7 @@ def main():
 
     pruned_weights = resolve_project_path(settings.pop("pruned_weights"))
     teacher_weights = resolve_project_path(settings.pop("teacher_weights"))
+    trainable_parameter_patterns = tuple(settings.pop("trainable_parameter_patterns", ()))
     settings["model"] = str(pruned_weights)
     settings["data"] = str(resolve_project_path(settings["data"]))
     settings["project"] = str(resolve_project_path(settings.get("project", "vehicle_pose_runs_pruned")))
@@ -110,6 +166,7 @@ def main():
         pruned_weights=pruned_weights,
         teacher_weights=teacher_weights,
         distillation_config=distillation_config,
+        trainable_parameter_patterns=trainable_parameter_patterns,
         overrides=settings,
     )
     yaml_save(
@@ -124,6 +181,7 @@ def main():
             "pose_distill_weight": distillation_config.pose_weight,
             "feature_distill_weight": distillation_config.feature_weight,
             "feature_distill_layers": list(distillation_config.feature_layers),
+            "trainable_parameter_patterns": list(trainable_parameter_patterns),
         },
     )
     trainer.train()

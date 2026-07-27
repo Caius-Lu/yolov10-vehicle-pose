@@ -545,6 +545,9 @@ class v10Pose(v10Detect):
         pose_head_channels=96,
         pose_head_depth=2,
         box_head_depth=2,
+        class_head_depth=2,
+        class_head_channels=None,
+        class_lite_channels=None,
         ch=(),
     ):
         # parse_model historically appended ch as the fifth positional argument.
@@ -552,6 +555,12 @@ class v10Pose(v10Detect):
         # box_head_depth before the newly appended channel list.
         if isinstance(box_head_depth, (list, tuple)):
             ch, box_head_depth = box_head_depth, 2
+        elif isinstance(class_head_depth, (list, tuple)):
+            ch, class_head_depth = class_head_depth, 2
+        elif isinstance(class_head_channels, (list, tuple)):
+            ch, class_head_channels = class_head_channels, None
+        elif isinstance(class_lite_channels, (list, tuple)):
+            ch, class_lite_channels = class_lite_channels, None
         super().__init__(nc, ch)
         if len(kpt_shape) != 2 or kpt_shape[0] <= 0 or kpt_shape[1] not in (2, 3):
             raise ValueError(f"Invalid kpt_shape={kpt_shape}; expected [keypoint_count, 2|3]")
@@ -559,15 +568,29 @@ class v10Pose(v10Detect):
             raise ValueError("pose_head_channels and pose_head_depth must be positive")
         if box_head_depth not in (1, 2):
             raise ValueError("box_head_depth must be 1 or 2")
+        if class_head_depth not in (1, 2, 3):
+            raise ValueError("class_head_depth must be 1, 2, or 3 (lite second stage)")
+        if class_head_channels is not None and class_head_channels <= 0:
+            raise ValueError("class_head_channels must be positive")
+        if class_lite_channels is not None and class_lite_channels <= 0:
+            raise ValueError("class_lite_channels must be positive")
         self.kpt_shape = list(kpt_shape)
         self.nk = self.kpt_shape[0] * self.kpt_shape[1]
         self.pose_head_channels = pose_head_channels
         self.pose_head_depth = pose_head_depth
         self.box_head_depth = box_head_depth
+        self.class_head_depth = class_head_depth
+        self.class_head_channels = class_head_channels or max(ch[0], min(self.nc, 100))
+        self.class_lite_channels = class_lite_channels or max(16, self.class_head_channels * 3 // 4)
         self.one2one_only = False
         if self.box_head_depth == 1:
             self.cv2 = nn.ModuleList(self._box_tower(x) for x in ch)
             self.one2one_cv2 = copy.deepcopy(self.cv2)
+        if self.class_head_depth in (1, 3):
+            self.cv3 = nn.ModuleList(
+                self._class_tower(x, self.class_head_channels, add_pointwise=self.class_head_depth == 3) for x in ch
+            )
+            self.one2one_cv3 = copy.deepcopy(self.cv3)
         self.cv4 = nn.ModuleList(self._pose_tower(x) for x in ch)
         self.one2one_cv4 = copy.deepcopy(self.cv4)
 
@@ -579,6 +602,19 @@ class v10Pose(v10Detect):
         layers = [Conv(input_channels, self.pose_head_channels, 3)]
         layers.extend(Conv(self.pose_head_channels, self.pose_head_channels, 3) for _ in range(self.pose_head_depth - 1))
         layers.append(nn.Conv2d(self.pose_head_channels, self.nk, 1))
+        return nn.Sequential(*layers)
+
+    def _class_tower(self, input_channels, hidden_channels, add_pointwise=False):
+        layers = [
+            nn.Sequential(
+                Conv(input_channels, input_channels, 3, g=input_channels),
+                Conv(input_channels, hidden_channels, 1),
+            ),
+        ]
+        if add_pointwise:
+            layers.append(Conv(hidden_channels, self.class_lite_channels, 1))
+            hidden_channels = self.class_lite_channels
+        layers.append(nn.Conv2d(hidden_channels, self.nc, 1))
         return nn.Sequential(*layers)
 
     def _forward_keypoints(self, features, towers):
