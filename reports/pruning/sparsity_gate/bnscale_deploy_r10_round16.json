@@ -1,0 +1,59 @@
+{
+  "parameters_before": 4005986,
+  "parameters_after": 2552977,
+  "parameters_removed": 1453009,
+  "parameter_reduction_ratio": 0.3627094553001433,
+  "pruning_config": {
+    "pruning_ratio": 0.1,
+    "head_pruning_ratio": null,
+    "iterative_steps": 1,
+    "round_to": 16,
+    "global_pruning": true,
+    "measure_macs": false,
+    "model_indices": [],
+    "importance": "bn_scale",
+    "one2one_head_only": true
+  },
+  "prunable_root_count": 35,
+  "backbone_neck_root_count": 17,
+  "head_hidden_root_count": 18,
+  "head_hidden_pruned_root_count": 18,
+  "ignored_root_count": 91,
+  "protected_output_count": 18,
+  "macs_before": null,
+  "macs_after": null,
+  "structural_parameters_after": 3633106,
+  "source_checkpoint": "/home/caius/projects/yolopose/yolov10-vehicle-pose/vehicle_pose_runs_sparsity/carfusion_baseline_bnscale_sparse_gate10e_r1/weights/last.pt",
+  "output_checkpoint": "/home/caius/projects/yolopose/yolov10-vehicle-pose/outputs/pruning/sparsity_gate/bnscale_deploy_r10_round16.pt",
+  "example_shape": [
+    1,
+    3,
+    64,
+    64
+  ],
+  "smoke_output_shape": [
+    1,
+    47,
+    84
+  ],
+  "smoke_finite": true,
+  "deployment_only": true,
+  "deployment_branch_pruning": {
+    "parameters_before": 3633106,
+    "parameters_after": 2552977,
+    "parameters_removed": 1080129,
+    "parameter_reduction_ratio": 0.2973018128290229,
+    "pruning_type": "one2many_deployment_branch_removal",
+    "deployment_only": true,
+    "removed_branches": [
+      "cv2",
+      "cv3",
+      "cv4"
+    ],
+    "preserved_branches": [
+      "one2one_cv2",
+      "one2one_cv3",
+      "one2one_cv4"
+    ]
+  }
+}

@@ -202,3 +202,61 @@ PYTHONPATH=. .venv/bin/python benchmarks/pretrain_architecture_gate.py --baselin
 PYTHONPATH=. .venv/bin/python benchmarks/benchmark_deploy_fp16.py --checkpoint BASELINE --candidate-checkpoint CANDIDATE ...
 PYTHONPATH=. .venv/bin/python scripts/prune_deployment_branches.py --checkpoint BASELINE --output DEPLOYMENT_ONLY ...
 ```
+
+## 2026-07-27：BN-scale 稀疏训练与 active-head 物理剪枝
+
+- 用户批准继续稀疏训练→物理剪枝路线，并再次明确只做压缩/剪枝、
+  不涉及 TensorRT；本轮没有执行或实现 TensorRT。
+- 按 TDD 新增 opt-in BN-scale 稀疏 Pose 模型、训练入口、分布统计和
+  Torch-Pruning `BNScaleImportance`。首次红灯为模块/模型/生命周期 helper
+  不存在，实现后相关测试转绿。
+- 首次真实 1 epoch 冒烟在训练前发现 trainer.model 仍是 checkpoint 字符串，
+  产生 `AttributeError`；新增生命周期回归后修复。第二次正式启动在训练前被
+  W&B 把本地绝对 project 路径判为非法，设置 `WANDB_MODE=disabled` 后继续，
+  两次失败均未产生训练结果。
+- 第一版稀疏项没有按现有 Pose loss 的 batch size 缩放，1 epoch BN mean
+  仅从 1.1773639 降至 1.1773475。新增 batch=4 的红灯测试后修复，重跑相同
+  权重后单轮降至 1.1763493，收缩幅度约提高 62 倍；Box/Pose 为
+  0.65179/0.50477，允许进入 10 epoch。
+- 10 epoch 完整训练结束。BN mean 为 1.1667584（-0.90%），零通道比例仍为
+  0；best 完整验证 Box/Pose 约 0.661/0.512，PCK@0.05 0.67301、
+  PCK@0.10 0.85768、NME 0.05914，稀疏训练本身保持精度。
+- coverage/pytest-cov 两次尝试均被远端环境阻断：首次触发 NumPy 重载及用户
+  OpenCV 包的 `cv2.dnn.DictValue` 错误；`PYTHONNOUSERSITE=1` 后又缺少
+  `pygments`。不伪造覆盖率数字；最终真实相关回归为 37/37。
+- 全头 BN-scale r10/r15、round16 实际参数下降 15.85%/17.03%，paired
+  fused-FP16 分别慢 0.81%/0.92%，未启动 KD。
+- 初版 deployment-only 在物理删除 one-to-many 后再构建 DepGraph，
+  Torch-Pruning 因输出中含 `None` 失败；没有生成 checkpoint。改为用完整图
+  追踪依赖、只允许 active one-to-one head 成为剪枝根，结构剪完再删除
+  one-to-many，相关测试转绿。
+- active-head r10/r15 round16、r25/r35 round32 最终部署参数分别下降
+  36.27%/37.45%/44.36%/52.12%，但 paired 延迟依次为慢 0.69%、
+  快 0.04%、快 0.08%、慢 1.23%，全部未过 10% 门槛。
+- 对 r10/r25 执行完整 3,606 图 FP16 验证：Box mAP50-95 仅
+  0.000379/0.000244，Pose mAP50-95 约 2.67e-7/2.32e-7，
+  PCK@0.05 0.01611/0.01466，精度门禁明确失败。
+- 显存测量先发现稀疏训练的普通 Python BN 引用仍保留已删除 tower；
+  TDD 清理后又发现 deployment-only 参数仍可求梯度，fuse 会保留 autograd
+  图。新增冻结测试并修复后，r10 的 fused 参数/缓冲存储下降 36.34%，
+  CUDA 模型加载下降 15.17%，峰值下降 13.74%。该候选因精度失败不交付。
+- 一次 scp 把 `scripts/prune_vehicle_pose.py` 误放到远端
+  `ultralytics/models/yolov10/`；发现后只删除这个刚创建的精确副本。
+- 所有 BN-scale 候选均未通过延迟门槛，KD 不能改善延迟，因此按门禁不启动
+  恢复训练。最终继续采用既有 branch-only checkpoint 作为精度不变的
+  模型体积/内存压缩方案。
+- 最终相关 Vehicle Pose/稀疏/剪枝回归 38/38 通过（2.13 秒）。
+  `scripts/validate_project.sh` 的代码/模型阶段 31/31 通过（1.09 秒），
+  checkpoint 迁移 shape 相同、max/mean absolute error 均为 0；
+  随后 CarFusion 原始树检查连续 180 秒无输出并由 timeout 以 124 结束，
+  与本日已记录的 WSL p9 I/O 阻塞一致。整条脚本不记作完整 PASS。
+
+### 已执行命令（脱敏）
+
+```bash
+.venv/bin/python scripts/train_pose_sparsity.py --config configs/pose_sparsity_gate10e.yaml
+.venv/bin/python scripts/prune_vehicle_pose.py --importance bn_scale --global-pruning --deployment-only ...
+.venv/bin/python benchmarks/benchmark_deploy_fp16.py --checkpoint BASELINE --candidate-checkpoint CANDIDATE ...
+.venv/bin/yolo pose val model=CANDIDATE data=CarFusion-pose.yaml imgsz=640 half=True
+.venv/bin/python benchmarks/measure_deploy_memory.py --checkpoint CANDIDATE ...
+```

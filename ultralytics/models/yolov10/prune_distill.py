@@ -31,6 +31,8 @@ class PruningConfig:
     global_pruning: bool = False
     measure_macs: bool = False
     model_indices: tuple[int, ...] = ()
+    importance: str = "magnitude"
+    one2one_head_only: bool = False
 
     def __post_init__(self):
         if not 0.0 < self.pruning_ratio < 0.5:
@@ -45,6 +47,8 @@ class PruningConfig:
             self.model_indices
         ):
             raise ValueError("model_indices must contain unique non-negative model indices")
+        if self.importance not in {"magnitude", "bn_scale"}:
+            raise ValueError("importance must be 'magnitude' or 'bn_scale'")
 
 
 @dataclass(frozen=True)
@@ -97,6 +101,8 @@ def prune_one2many_deployment_branches(model):
     head.one2many_deployment_pruned = True
     head.one2one_only = True
     model.eval()
+    for parameter in model.parameters():
+        parameter.requires_grad_(False)
     report = build_pruning_report(
         parameters_before,
         count_parameters(model),
@@ -144,10 +150,15 @@ def collect_head_output_layers(head):
     return protected
 
 
-def _head_hidden_convolutions(head):
+def _head_hidden_convolutions(head, one2one_only=False):
     protected_ids = {id(layer) for layer in collect_head_output_layers(head)}
     roots = []
-    for name in ("cv2", "cv3", "one2one_cv2", "one2one_cv3", "cv4", "one2one_cv4"):
+    names = (
+        ("one2one_cv2", "one2one_cv3", "one2one_cv4")
+        if one2one_only
+        else ("cv2", "cv3", "one2one_cv2", "one2one_cv3", "cv4", "one2one_cv4")
+    )
+    for name in names:
         for tower in getattr(head, name):
             for module in tower.modules():
                 if isinstance(module, Conv) and module.conv.groups == 1 and id(module.conv) not in protected_ids:
@@ -155,7 +166,7 @@ def _head_hidden_convolutions(head):
     return roots
 
 
-def collect_prunable_root_layers(model, include_head_hidden=True, model_indices=()):
+def collect_prunable_root_layers(model, include_head_hidden=True, model_indices=(), one2one_head_only=False):
     """Select conservative roots whose output width has no stale split attribute.
 
     Internal C2f/PSA split convolutions and depthwise roots are deliberately not
@@ -180,7 +191,7 @@ def collect_prunable_root_layers(model, include_head_hidden=True, model_indices=
         elif isinstance(block, PSA):
             roots.append(block.cv2.conv)
     if include_head_hidden:
-        roots.extend(_head_hidden_convolutions(model.model[-1]))
+        roots.extend(_head_hidden_convolutions(model.model[-1], one2one_only=one2one_head_only))
     unique = []
     seen = set()
     for layer in roots:
@@ -233,6 +244,7 @@ def structurally_prune_model(model, example_input, config=None, pruning_backend=
         model,
         include_head_hidden=True,
         model_indices=config.model_indices,
+        one2one_head_only=config.one2one_head_only,
     )
     backbone_neck_ids = {id(layer) for layer in backbone_neck_roots}
     head_hidden_roots = [layer for layer in all_roots if id(layer) not in backbone_neck_ids]
@@ -253,10 +265,16 @@ def structurally_prune_model(model, example_input, config=None, pruning_backend=
     if config.measure_macs and hasattr(backend, "utils") and hasattr(backend.utils, "count_ops_and_params"):
         macs_before, _ = backend.utils.count_ops_and_params(model, example_input)
 
-    importance_cls = getattr(backend.importance, "GroupMagnitudeImportance", None)
-    if importance_cls is None:
-        importance_cls = backend.importance.MagnitudeImportance
-    importance = importance_cls(p=2)
+    if config.importance == "bn_scale":
+        importance_cls = getattr(backend.importance, "BNScaleImportance", None)
+        if importance_cls is None:
+            raise RuntimeError("the installed Torch-Pruning does not provide BNScaleImportance")
+        importance = importance_cls()
+    else:
+        importance_cls = getattr(backend.importance, "GroupMagnitudeImportance", None)
+        if importance_cls is None:
+            importance_cls = backend.importance.MagnitudeImportance
+        importance = importance_cls(p=2)
     pruner_cls = getattr(backend.pruner, "MetaPruner", None)
     if pruner_cls is None:
         pruner_cls = backend.pruner.MagnitudePruner
@@ -554,6 +572,12 @@ def build_pruned_checkpoint(model, source_checkpoint, report):
     # student has moved to its training device.
     if hasattr(checkpoint_model, "criterion"):
         del checkpoint_model.criterion
+    # Sparse-training helpers hold ordinary Python references to every selected
+    # BN layer. After deployment branch removal those references can retain
+    # otherwise deleted towers and defeat checkpoint/CUDA-memory compression.
+    for name in ("sparsity_bn_layers", "sparsity_config", "last_sparsity_loss"):
+        if hasattr(checkpoint_model, name):
+            delattr(checkpoint_model, name)
     checkpoint_model.zero_grad(set_to_none=True)
     return {
         "epoch": -1,

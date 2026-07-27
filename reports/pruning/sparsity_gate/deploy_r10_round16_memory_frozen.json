@@ -1,0 +1,24 @@
+{
+  "environment": {
+    "device": "NVIDIA GeForce RTX 3090 Ti",
+    "torch": "2.6.0+cu124",
+    "precision": "fused FP16",
+    "batch": 1,
+    "imgsz": 640,
+    "path": "one-to-one-only"
+  },
+  "checkpoint": "outputs/pruning/sparsity_gate/bnscale_deploy_r10_round16.pt",
+  "parameters_fused": 2541633,
+  "parameter_and_buffer_storage_bytes": 5083266,
+  "cuda_allocated_baseline_bytes": 0,
+  "cuda_allocated_after_model_bytes": 48965120,
+  "cuda_model_delta_bytes": 48965120,
+  "cuda_allocated_with_input_bytes": 51422720,
+  "cuda_peak_during_inference_bytes": 62309376,
+  "dense_shape": [
+    1,
+    47,
+    8400
+  ],
+  "dense_finite": true
+}

@@ -1,0 +1,14 @@
+student_initialization: /home/caius/projects/yolopose/yolov10-vehicle-pose/vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt
+sparsity_weight: 0.001
+sparsity_model_indices: []
+sparsity_include_head_hidden: true
+initial_bn_scales:
+  channels: 4944
+  zero_threshold: 0.001
+  zero_fraction: 0.0
+  min: 0.279541015625
+  p25: 0.916015625
+  p50: 1.0185546875
+  p75: 1.2001953125
+  max: 4.9140625
+  mean: 1.1773638725280762

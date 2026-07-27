@@ -20,6 +20,7 @@ from ultralytics.models.yolov10.prune_distill import (
     prune_one2many_deployment_branches,
     upgrade_for_pruning_distillation,
 )
+from scripts.prune_vehicle_pose import parse_args as parse_pruning_args
 from ultralytics.nn.tasks import YOLOv10PoseModel
 
 
@@ -78,6 +79,8 @@ def test_pruning_config_rejects_destructive_or_invalid_settings():
         PruningConfig(pruning_ratio=0.15, model_indices=(-1,))
     with pytest.raises(ValueError, match="model_indices"):
         PruningConfig(pruning_ratio=0.15, model_indices=(4, 4))
+    with pytest.raises(ValueError, match="importance"):
+        PruningConfig(pruning_ratio=0.15, importance="unknown")
 
 
 def test_output_distillation_config_validates_weights_and_resolution():
@@ -188,6 +191,18 @@ def test_head_hidden_roots_can_be_fully_protected_for_accuracy_repair():
     assert head_hidden.issubset(set(collect_ignored_root_layers(model, protected_head_roots)))
 
 
+def test_one2one_head_only_excludes_unused_one2many_pruning_roots():
+    model = YOLOv10PoseModel(POSE_CFG, verbose=False)
+    backbone_neck = collect_prunable_root_layers(model, include_head_hidden=False)
+    all_roots = collect_prunable_root_layers(model)
+    active_roots = collect_prunable_root_layers(model, one2one_head_only=True)
+
+    assert len(all_roots) - len(backbone_neck) == 36
+    assert len(active_roots) - len(backbone_neck) == 18
+    assert set(backbone_neck).issubset(active_roots)
+    assert set(active_roots).issubset(all_roots)
+
+
 def test_backbone_neck_pruning_roots_can_be_limited_to_profiled_model_indices():
     model = YOLOv10PoseModel(POSE_CFG, verbose=False)
 
@@ -267,6 +282,9 @@ def test_upgrade_drops_stale_loss_criterion_before_device_migration():
 def test_pruned_checkpoint_drops_stale_loss_criterion_before_recovery_training():
     model = YOLOv10PoseModel(POSE_CFG, verbose=False)
     model.criterion = object()
+    model.sparsity_bn_layers = [model.model[0].bn]
+    model.sparsity_config = object()
+    model.last_sparsity_loss = torch.tensor(1.0)
 
     checkpoint = build_pruned_checkpoint(
         model,
@@ -275,6 +293,9 @@ def test_pruned_checkpoint_drops_stale_loss_criterion_before_recovery_training()
     )
 
     assert not hasattr(checkpoint["model"], "criterion")
+    assert not hasattr(checkpoint["model"], "sparsity_bn_layers")
+    assert not hasattr(checkpoint["model"], "sparsity_config")
+    assert not hasattr(checkpoint["model"], "last_sparsity_loss")
 
 
 def test_deployment_branch_pruning_preserves_one2one_output_and_removes_parameters():
@@ -296,7 +317,14 @@ def test_deployment_branch_pruning_preserves_one2one_output_and_removes_paramete
     head = pruned.model[-1]
     assert not head.cv2 and not head.cv3 and not head.cv4
     assert head.one2one_only is True
+    assert all(not parameter.requires_grad for parameter in pruned.parameters())
 
     pruned.train()
     with pytest.raises(RuntimeError, match="deployment-only"):
         pruned(image)
+
+
+def test_pruning_cli_can_target_the_deployment_only_graph():
+    args = parse_pruning_args(["--deployment-only"])
+
+    assert args.deployment_only is True

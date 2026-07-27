@@ -1,0 +1,24 @@
+{
+  "environment": {
+    "device": "NVIDIA GeForce RTX 3090 Ti",
+    "torch": "2.6.0+cu124",
+    "precision": "fused FP16",
+    "batch": 1,
+    "imgsz": 640,
+    "path": "one-to-one-only"
+  },
+  "checkpoint": "vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt",
+  "parameters_fused": 3992210,
+  "parameter_and_buffer_storage_bytes": 7984420,
+  "cuda_allocated_baseline_bytes": 0,
+  "cuda_allocated_after_model_bytes": 57721856,
+  "cuda_model_delta_bytes": 57721856,
+  "cuda_allocated_with_input_bytes": 60179456,
+  "cuda_peak_during_inference_bytes": 72237568,
+  "dense_shape": [
+    1,
+    47,
+    8400
+  ],
+  "dense_finite": true
+}
