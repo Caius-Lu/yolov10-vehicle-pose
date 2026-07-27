@@ -458,3 +458,18 @@ PYTHONPATH=. .venv/bin/pytest -q tests/test_fasthead_transfer.py tests/test_lite
   文件系统等待一致；没有把未完成的数据检查宣称为通过。PPT 数据测试 4/4
   通过，line/branch/function 覆盖率 85.41%/86.36%/92.59%，PPTX 压缩包
   无错误，PDF 为 3 页 1600×900，三页重新完成视觉检查。
+
+## 2026-07-28：最终 PPT 与演讲稿审校
+
+- 将第 1 页遗留的“双门禁”统一为速度、精度、独立 CUDA memory 三门禁，
+  明确 P5-Zero 是唯一同时通过的结构候选。
+- 将第 2 页 P5-Zero 从旧研究候选的琥珀视觉升级为蓝色正式交付主卡；保留
+  deployment-only 绿色体积方案，避免两种收益被混为一谈。
+- 演讲稿明确区分最佳 checkpoint 精确记录 0.66254/0.49592 与最终
+  fused-FP16 全量复验 0.662/0.496，并补充“通过发布门槛不等于相对原始
+  baseline 完全无损”的可靠性边界。
+- 第 3 页流程统一为 `EVIDENCE → RULES → DELIVERY`，将“下一步结构搜索”
+  改为“交付与复验”，与最终决策一致。
+- 新增三门禁与 speaker-notes 一致性回归；最终 PPT 测试 5/5 通过，
+  line/branch/function 覆盖率 85.47%/86.36%/92.59%。重新生成 3 张 PNG、
+  PPTX、PDF 和汇总演讲稿，并逐页完成视觉检查。

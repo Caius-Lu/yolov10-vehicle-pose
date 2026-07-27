@@ -1,5 +1,7 @@
 # 内容分析
 
+- 最终设置：中文，3 页，blueprint（grid + cool + technical + dense），
+  面向算法工程师；在既有目录原位更新。
 - 主题：Vehicle Pose 压缩/剪枝实验复盘
 - 核心信息：26+ 组实验表明“参数更少”不等于“GPU 更快”；P5-Zero 通过
   速度、精度和显存三门禁，deployment-only 与其分别覆盖体积优先和综合平衡。

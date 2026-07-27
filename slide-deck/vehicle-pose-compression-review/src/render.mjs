@@ -104,20 +104,22 @@ function slide1(data) {
     ${header("26+ 组实验后的硬结论：参数更少 ≠ GPU 更快", `统一口径：${methodology.device} · ${methodology.imageSize} · batch=${methodology.batch} · ${methodology.precision} · ${methodology.latencyProtocol} · ${methodology.validationImages.toLocaleString()} 图完整验证`)}
     ${text(82, 198, "实验路线地图", 18, 750, C.navy)}
     ${rowSvg}
-    ${rect(1070, 218, 450, 238, C.white, C.line, 12)}
-    ${text(1098, 252, "双门禁", 19, 750, C.navy)}
+    ${rect(1070, 218, 450, 310, C.white, C.line, 12)}
+    ${text(1098, 252, "三门禁", 19, 750, C.navy)}
     ${chip(1098, 275, "GATE 1 · SPEED", "blue", 170)}
-    ${metric(1098, 338, `≥ ${gates.minLatencyReductionPct}%`, "paired fused-FP16 延迟下降", C.blue, 36)}
-    <line x1="1098" y1="385" x2="1492" y2="385" stroke="${C.line}" stroke-width="1.5"/>
-    ${chip(1098, 401, "GATE 2 · ACCURACY", "blue", 190)}
-    ${text(1320, 426, `Box ≥ ${fixed(gates.minBoxMap)}`, 20, 700, C.text)}
-    ${text(1320, 451, `Pose ≥ ${fixed(gates.minPoseMap)}`, 20, 700, C.text)}
-    ${rect(1070, 476, 450, 226, C.navy, C.navy, 12)}
-    ${text(1098, 512, "双门禁同时通过", 18, 600, "#BFDBFE")}
-    ${text(1098, 592, "1", 76, 800, C.white, "start", mono)}
-    ${text(1165, 588, "个结构候选", 24, 600, C.white)}
-    ${text(1098, 644, "参数量不是 GPU latency 的可靠代理", 21, 750, "#FDE68A")}
-    ${text(1098, 675, "真正有效：减少串行 kernel / 卷积层", 18, 500, "#E2E8F0")}
+    ${metric(1098, 330, `≥ ${gates.minLatencyReductionPct}%`, "paired fused-FP16 延迟下降", C.blue, 32)}
+    <line x1="1098" y1="366" x2="1492" y2="366" stroke="${C.line}" stroke-width="1.5"/>
+    ${chip(1098, 382, "GATE 2 · ACCURACY", "blue", 190)}
+    ${text(1310, 407, `Box ≥ ${fixed(gates.minBoxMap)}`, 19, 700, C.text)}
+    ${text(1310, 432, `Pose ≥ ${fixed(gates.minPoseMap)}`, 19, 700, C.text)}
+    <line x1="1098" y1="451" x2="1492" y2="451" stroke="${C.line}" stroke-width="1.5"/>
+    ${chip(1098, 467, "GATE 3 · MEMORY", "blue", 184)}
+    ${text(1310, 492, "独立进程 CUDA 峰值下降", 18, 700, C.text)}
+    ${rect(1070, 546, 450, 156, C.navy, C.navy, 12)}
+    ${text(1098, 578, "三门禁同时通过", 18, 600, "#BFDBFE")}
+    ${text(1098, 650, "1", 68, 800, C.white, "start", mono)}
+    ${text(1160, 644, "个结构候选", 23, 600, C.white)}
+    ${text(1098, 682, "P5-Zero · latency −14.83% · peak −5.02%", 17, 750, "#FDE68A")}
     ${rect(80, 742, 1440, 96, "#EFF6FF", "#93C5FD", 10)}
     ${text(104, 775, "BASELINE", 16, 800, C.blue, "start", mono)}
     ${metric(250, 786, `${baseline.boxMap.toFixed(3)} / ${baseline.poseMap.toFixed(3)}`, "Box / Pose mAP50-95", C.navy, 29)}
@@ -150,14 +152,14 @@ function slide2(data) {
     ${text(112, 661, "工程定位", 17, 750, C.green)}
     ${lines(112, 693, ["✓ 立即交付：模型体积 / CUDA 内存优化", "✓ 精度与输出等价，风险边界清晰", "× 不宣称显著 latency 收益"], 20, 30, 550)}
 
-    ${rect(834, 205, 686, 565, "#FFFBEB", "#FCD34D", 16, 2)}
+    ${rect(834, 205, 686, 565, "#EFF6FF", "#60A5FA", 16, 2)}
     ${cardTitle(866, 232, balanced.decision, balanced.label, balanced.decisionType)}
     ${text(866, 336, balanced.description, 18, 500, C.muted)}
     ${metric(866, 410, fixed(balanced.baselineMs), "baseline ms", C.muted, 34)}
     ${text(1070, 410, "→", 34, 700, C.green)}
     ${metric(1132, 410, fixed(balanced.candidateMs), "candidate ms", C.blue, 34)}
     ${metric(1375, 410, `−${balanced.latencyReductionPct.toFixed(2)}%`, "paired latency", C.green, 34)}
-    <line x1="866" y1="467" x2="1488" y2="467" stroke="#86EFAC" stroke-width="1.5"/>
+    <line x1="866" y1="467" x2="1488" y2="467" stroke="#93C5FD" stroke-width="1.5"/>
     ${metric(866, 535, `${fixed(balanced.boxMap)} / ${fixed(balanced.poseMap)}`, "最佳 Box / Pose", C.navy, 32)}
     ${metric(1245, 535, `−${balanced.parameterReductionPct.toFixed(2)}%`, "参数量", C.blue, 32)}
     ${chip(866, 600, "SPEED PASS", "pass", 142)}
@@ -191,10 +193,10 @@ function slide3(data) {
   const { methodology, review } = data;
   return shell(`
     ${header("工程决策：P5-Zero 通过三门禁，进入可复用交付", "从失败机制到成功结构，固化可复用的模型压缩搜索与验证规则")}
-    ${text(80, 208, "EVIDENCE → RULES → NEXT SEARCH", 16, 800, C.blue, "start", mono)}
+    ${text(80, 208, "EVIDENCE → RULES → DELIVERY", 16, 800, C.blue, "start", mono)}
     ${stage(80, "失败机制", "01", review.mechanisms, C.red)}
     ${stage(590, "已证实的工程规则", "02", review.rules, C.blue)}
-    ${stage(1100, "下一步结构搜索", "03", review.nextSteps, C.green)}
+    ${stage(1100, "交付与复验", "03", review.nextSteps, C.green)}
     <path d="M500 417 H570" stroke="${C.blue}" stroke-width="3"/><path d="M560 407 L575 417 L560 427" fill="none" stroke="${C.blue}" stroke-width="3"/>
     <path d="M1010 417 H1080" stroke="${C.blue}" stroke-width="3"/><path d="M1070 407 L1085 417 L1070 427" fill="none" stroke="${C.blue}" stroke-width="3"/>
     ${rect(80, 632, 1440, 170, "#EFF6FF", "#93C5FD", 14, 2)}

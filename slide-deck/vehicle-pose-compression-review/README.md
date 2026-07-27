@@ -93,5 +93,5 @@ vehicle-pose-compression-review/
 - 只比较同一次 paired AB/BA 运行里的 baseline/candidate。
 - FP16/fuse 收益与结构剪枝收益分开表述。
 - 完整精度来自 3,606 图验证，不用训练 loss 代替 mAP。
-- 未同时通过速度和精度门槛的结构只能标记为研究候选。
+- 未同时通过速度、精度和独立 CUDA memory 门槛的结构只能标记为研究候选。
 - 权重迁移、BN 冻结、停止原因和基础设施异常必须保留记录。

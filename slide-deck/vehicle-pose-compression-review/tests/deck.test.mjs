@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -19,6 +19,8 @@ test("deck data keeps the published gates and the two highlighted candidates", (
   );
   assert.equal(DECK_DATA.bestCandidates[1].speedPassed, true);
   assert.equal(DECK_DATA.bestCandidates[1].accuracyPassed, true);
+  assert.equal(DECK_DATA.bestCandidates[1].latencyReductionPct, 14.83371);
+  assert.equal(DECK_DATA.bestCandidates[1].poseMap, 0.49592);
 });
 
 test("deck data rejects contradictory pass labels", () => {
@@ -37,6 +39,21 @@ test("renderer produces exactly three 1600x900 slide SVGs", () => {
     assert.match(slide.svg, /width="1600" height="900"/);
     assert.match(slide.svg, /Vehicle Pose|P5-Zero|参数更少/);
   }
+  assert.match(slides[0].svg, /GATE 3 · MEMORY/);
+  assert.match(slides[0].svg, /三门禁同时通过/);
+  assert.doesNotMatch(slides[0].svg, /双门禁/);
+  assert.match(slides[2].svg, /EVIDENCE → RULES → DELIVERY/);
+  assert.match(slides[2].svg, /交付与复验/);
+});
+
+test("speaker notes use the final three-gate conclusion", () => {
+  const notes = readFileSync(
+    new URL("../speaker-notes/01-slide-experiment-map.md", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(notes, /三门禁/);
+  assert.doesNotMatch(notes, /双门禁/);
 });
 
 test("build input discovery sorts slides and rejects gaps", () => {
