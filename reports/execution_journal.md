@@ -473,3 +473,22 @@ PYTHONPATH=. .venv/bin/pytest -q tests/test_fasthead_transfer.py tests/test_lite
 - 新增三门禁与 speaker-notes 一致性回归；最终 PPT 测试 5/5 通过，
   line/branch/function 覆盖率 85.47%/86.36%/92.59%。重新生成 3 张 PNG、
   PPTX、PDF 和汇总演讲稿，并逐页完成视觉检查。
+
+## 2026-07-28：P5-Zero 复现文档与配置收口
+
+- 新增 `README_P5ZERO.md`，完整记录成功方案的结构血缘、外部制品边界、
+  环境与数据准备、同源教师重建、两阶段 KD、完整精度验证、paired
+  fused-FP16 测速、独立进程 CUDA memory、测试、推理和故障排查。
+- 主 README 与车辆姿态 README 改为优先推荐 P5-Zero，并明确最终权重和
+  CarFusion 数据不进入 Git；新增原始 baseline、同源教师与最终学生的大小
+  和 SHA256，避免同名 checkpoint 被误用。
+- 五个训练配置统一默认引用仓库内版本化的
+  `ultralytics/cfg/datasets/CarFusion-pose.yaml`；两个 P5 配置新增
+  `save_period: 1`，便于按 Box/Pose 双门槛显式选择 checkpoint。
+- 本地 Markdown 相对链接检查与 YAML 路径检查通过；WSL 中四个修改配置
+  均成功加载，构建/训练/测速/显存脚本 CLI 接口检查通过，P5 相关聚焦测试
+  **33/33 passed**。没有重跑长训练。
+- 综合验收沿用 2026-07-27 的真实记录：首段 31/31 和部署输出一致性通过，
+  后续数据质量步骤因 WSL p9 等待达到外部 180 秒超时，仍不标记为综合全通过。
+- 使用独立读者审阅复现说明，并据此补齐直接父模型边界、门槛数值上下文、
+  分卷归档行为、外部制品获取方式、严格显存判据和 checkpoint 选择规则。

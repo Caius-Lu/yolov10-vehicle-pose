@@ -3,7 +3,7 @@
 # Stop after this run if the validation envelope does not materially expand.
 pruned_weights: vehicle_pose_runs_backbone_neck/carfusion_yolov10n_litepsa_c2f_p4d1_kd_adaptive_40e_r2/weights/best.pt
 teacher_weights: vehicle_pose_runs/carfusion_baseline_yolov10n_e_drive_20260718/weights/best.pt
-data: reports/training/runtime_configs/CarFusion-pose.yaml
+data: ultralytics/cfg/datasets/CarFusion-pose.yaml
 project: vehicle_pose_runs_backbone_neck
 name: carfusion_yolov10n_litepsa_c2f_p4d1_kd_adaptive_60e_r3
 

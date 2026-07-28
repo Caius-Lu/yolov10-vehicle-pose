@@ -2,7 +2,9 @@
 
 基于 [THU-MIG/YOLOv10](https://github.com/THU-MIG/yolov10) 扩展的车辆检测与关键点训练系统，面向 CarFusion 单类车辆数据。项目覆盖数据转换与质检、14×3 Pose Head、训练门禁、断点恢复、精度评估、可视化验收、端到端性能分析及部门分享材料。
 
-> 数据集不在本仓库中。代码、配置、测试、模型权重、实验报告、可视化结果、PPT、演讲稿和 Codex 提示词均已纳入版本管理。
+> CarFusion 数据和 P5-Zero 生成权重不在本仓库中。仓库版本化代码、配置、
+> 测试、JSON 证据、实验报告、可视化结果、PPT 和演讲稿；既有 baseline
+> 权重仅作为历史制品保留，新生成权重不得继续提交。
 
 ## 结果概览
 
@@ -21,6 +23,33 @@
 完整验收结论见 [reports/09_final_acceptance.md](reports/09_final_acceptance.md)。
 
 ![训练曲线](reports/training/final_assets/results.png)
+
+## 当前推荐：P5-Zero 平衡压缩
+
+P5-Zero 是当前通过速度、精度和独立 CUDA memory 三门禁的 PyTorch
+结构压缩方案，不使用 TensorRT。相对直接父模型 LitePSA+C2f-P4D1，它仅移除
+backbone/neck P5 的内部 bottleneck，完整保留 P3/P4 与 Box/Class/Pose
+任务塔；相对原始 baseline，它还继承了父模型的 LitePSA 和 P4 减深。
+
+| 指标 | 原始 baseline | P5-Zero | 变化 |
+|---|---:|---:|---:|
+| paired fused-FP16 latency | 5.94537 ms | 5.06345 ms | **-14.83371%** |
+| Box/Pose mAP50-95 | 约 0.665/0.515 | **0.66254/0.49592** | 达到发布门槛 |
+| fused 参数量 | 3,992,210 | 3,387,794 | **-15.13989%** |
+| 推理峰值 CUDA memory | 72,237,568 B | 68,609,024 B | **-5.02307%** |
+
+最终学生先经过同源全模型 KD，再进行 Pose-only KD 精修；部署推理不需要
+教师。Pose 门槛余量为 0.00137，因此换硬件、依赖或数据版本后必须重新执行
+三门禁。
+
+- **外部制品准备、训练、验证、测速和故障排查：**
+  [README_P5ZERO.md](README_P5ZERO.md)
+- **最终实验报告：**
+  [reports/kernel_depth/p5zero_balance_result_20260727.md](reports/kernel_depth/p5zero_balance_result_20260727.md)
+- **完整压缩实验复盘：**
+  [reports/kernel_depth/experiment_review_20260727.md](reports/kernel_depth/experiment_review_20260727.md)
+- **三页技术评审 PPT 与演讲稿：**
+  [slide-deck/vehicle-pose-compression-review](slide-deck/vehicle-pose-compression-review)
 
 ## 系统流程
 
@@ -49,33 +78,42 @@ flowchart LR
 - 测试先行修复 predictor 的 `xywh → xyxy` 框缩放问题。
 - PyTorch model-only、端到端 benchmark 与 profiler。
 - 独立 WSL ext4 数据暂存方案，不修改 baseline 代码、权重或结果。
+- P5-Zero 低分辨率串行深度压缩、投影折叠迁移与两阶段同源蒸馏。
 
 ## 快速开始
 
 ```bash
-git clone git@github.com:Caius-Lu/yolov10-vehicle-pose.git
+git clone --branch p5zero-v1 --depth 1 \
+  https://github.com/Caius-Lu/yolov10-vehicle-pose.git
 cd yolov10-vehicle-pose
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m pip install --no-build-isolation -e . pytest
 ```
 
-仓库已包含官方 YOLOv10n 预训练权重和本项目的 baseline / 实验 checkpoint：
+仓库历史提交包含官方 YOLOv10n 与部分 baseline/早期实验 checkpoint：
 
 - `weights/yolov10n.pt`
 - `outputs/baseline_weights/best.pt`
 - `outputs/baseline_weights/last.pt`
 - `outputs/network_optimization/yolov10n_pose_distilled_512_3e_best.pt`
 
+P5-Zero 的教师、初始化和最终 checkpoint 不提交 Git；其路径、生成方式和制品
+边界见 [P5-Zero 复现手册](README_P5ZERO.md#3-仓库内容与权重边界)。
+
 ## 数据准备
 
 CarFusion 数据需自行取得授权并放在本地或远程数据目录，禁止提交原始图片、标签归档、Token 或私密下载链接。
 
 ```bash
+export CARFUSION_ARCHIVE=/absolute/path/to/CarFusion.merged.tar.gz
+export CARFUSION_SHA256="$(sha256sum "$CARFUSION_ARCHIVE" | awk '{print $1}')"
+export CARFUSION_EXTRACTED=/absolute/path/to/extracted
 scripts/run_carfusion_pipeline.sh
 ```
 
 该入口依次完成 COCO 整理、YOLO Pose 转换、质量检查、固定切分和预览生成。详细说明见 [docs/dataset.md](docs/dataset.md)。
+若收到 `.00/.01/...` 真正分卷，须先按数据提供方说明合并；脚本不会自动拼接。
 
 ## 训练与恢复
 
@@ -112,7 +150,8 @@ scripts/benchmark_end_to_end.sh --checkpoint outputs/baseline_weights/best.pt
 scripts/profile_torch.sh --checkpoint outputs/baseline_weights/best.pt
 ```
 
-当前首选优化不是蒸馏，而是将转换后的数据从 `/mnt/e` 暂存到 WSL Linux 文件系统：
+端到端 I/O 瓶颈仍优先通过把转换后的数据从 `/mnt/e` 暂存到 WSL Linux
+文件系统解决：
 
 ```bash
 scripts/stage_carfusion_to_wsl.sh \
@@ -121,7 +160,11 @@ scripts/stage_carfusion_to_wsl.sh \
   reports/optimization/runtime_configs/CarFusion-pose-wsl.yaml
 ```
 
-相同模型、权重、精度与 100 张固定图片下，端到端平均延迟从 60.10 ms 降至 16.63 ms。完整边界和证据见 [reports/optimization/08_final_recommendation.md](reports/optimization/08_final_recommendation.md)。蒸馏实验保留为研究记录，但因没有产生部署延迟收益而未作为推荐方案。
+相同模型、权重、精度与 100 张固定图片下，端到端平均延迟从 60.10 ms 降至
+16.63 ms。完整边界和证据见
+[reports/optimization/08_final_recommendation.md](reports/optimization/08_final_recommendation.md)。
+这是数据路径优化；模型本体的当前推荐则是 P5-Zero。早期 512 分辨率蒸馏没有
+产生部署延迟收益，仅作为失败对照保留。
 
 ### 可选研究：结构化剪枝 + 恢复蒸馏
 
@@ -184,17 +227,36 @@ WANDB_MODE=disabled .venv/bin/python scripts/train_pose_pruned_distillation.py \
 | NME | 0.05960 | 0.07635 | +0.01675 |
 | fused FP16 latency | 5.6955 ms | 5.3314 ms | -6.39% |
 
-模块级 CUDA Event 仅用于占比分析：FastHead 的 Backbone + Neck 已占 71.6% 顶层模块时间；Head 参数减少 45.7%，Head 时间却只减少约 21.0%。因此参数量与 GPU 延迟不线性，继续压缩 Pose Head 会扩大精度损失，下一轮速度优化应优先验证 PSA、C2f/C2fCIB、TensorRT/Kernel 融合。完整结果与边界见 [最终报告](reports/fasthead/final_50e/final_report.md)。
+模块级 CUDA Event 仅用于占比分析：FastHead 的 Backbone + Neck 已占 71.6%
+顶层模块时间；Head 参数减少 45.7%，Head 时间却只减少约 21.0%。因此参数量
+与 GPU 延迟不线性，继续压缩 Pose Head 会扩大精度损失。后续已按该结论转向
+PSA、C2f/C2fCIB 与 kernel-friendly 串行深度，并最终得到 P5-Zero；本项目
+不把 TensorRT 纳入该结果。完整 FastHead 边界见
+[最终报告](reports/fasthead/final_50e/final_report.md)。
 
 FastHead、LitePSA+C2f 和 Joint RepC3 三条压缩线的最终取舍、真实 checkpoint 配对测速与下一轮硬门槛已汇总在[压缩实验归档](reports/EXPERIMENT_SUMMARY_20260724.md)。后续候选必须同时满足 Box/Pose mAP50-95 各自相对 baseline 的绝对损失不超过 `0.02`，且在同次配对 benchmark 中 fused FP16 延迟至少下降 `10%`；未满足前不得替换 baseline。
 
 ## 测试
 
+P5-Zero 聚焦回归：
+
+```bash
+PYTHONPATH=. .venv/bin/pytest -q \
+  tests/test_fasthead_transfer.py \
+  tests/test_lite_backbone_blocks.py \
+  tests/test_pose_pruning_pipeline.py
+```
+
+已发布环境结果为 33/33 通过。项目综合验收：
+
 ```bash
 DEVICE=cuda:0 IMGSZ=640 scripts/validate_project.sh
 ```
 
-最终远程验收中，全量 pytest 通过，Vehicle Pose 回归测试为 9/9。测试源码位于 [tests](tests)。
+历史 baseline 远程验收曾完成全量 pytest；P5-Zero 当前聚焦集合为 33/33。
+最近一次综合脚本首段 31/31 与部署输出一致性通过，但 CarFusion 数据质量步骤
+随后因 WSL p9 文件系统等待达到外部 180 秒超时，因此该次不标记为综合全通过。
+完整记录见 [执行日志](reports/execution_journal.md)，测试源码位于 [tests](tests)。
 
 ## 文档与分享材料
 
@@ -204,6 +266,9 @@ DEVICE=cuda:0 IMGSZ=640 scripts/validate_project.sh
 - [评估说明](docs/evaluation.md)
 - [性能优化说明](docs/optimization.md)
 - [结构化剪枝与恢复蒸馏方案](docs/pruning_distillation.md)
+- [P5-Zero 成功方案复现手册](README_P5ZERO.md)
+- [P5-Zero 最终结果与可靠性边界](reports/kernel_depth/p5zero_balance_result_20260727.md)
+- [全部压缩/剪枝实验复盘](reports/kernel_depth/experiment_review_20260727.md)
 - [Codex 构建训练系统部门分享底稿](docs/部门分享_从YOLOv10到车辆关键点训练系统.md)
 - [最终版 PPT](outputs/Codex构建YOLOPose训练系统_部门分享_最终版.pptx)
 - [完整演讲稿](outputs/Codex构建YOLOPose训练系统_完整演讲稿.md)

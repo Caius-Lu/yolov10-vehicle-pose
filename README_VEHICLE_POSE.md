@@ -5,7 +5,8 @@
 ## 1. 环境
 
 ```bash
-git clone https://github.com/THU-MIG/yolov10.git yolov10-vehicle-pose
+git clone --branch p5zero-v1 --depth 1 \
+  https://github.com/Caius-Lu/yolov10-vehicle-pose.git
 cd yolov10-vehicle-pose
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
@@ -34,6 +35,9 @@ sha256sum weights/yolov10n.pt
 远端首次完整执行可直接运行：
 
 ```bash
+export CARFUSION_ARCHIVE=/absolute/path/to/CarFusion.merged.tar.gz
+export CARFUSION_SHA256="$(sha256sum "$CARFUSION_ARCHIVE" | awk '{print $1}')"
+export CARFUSION_EXTRACTED=/absolute/path/to/extracted
 scripts/run_carfusion_pipeline.sh
 ```
 
@@ -41,12 +45,12 @@ scripts/run_carfusion_pipeline.sh
 
 ```bash
 .venv/bin/python scripts/prepare_carfusion_coco.py \
-  --train-json /home/caius/projects/yolopose/data/CarFusion/extracted/carfusion/annotations/car_keypoints_train.json \
-  --test-json /home/caius/projects/yolopose/data/CarFusion/extracted/carfusion/annotations/car_keypoints_test.json \
+  --train-json "$CARFUSION_EXTRACTED/carfusion/annotations/car_keypoints_train.json" \
+  --test-json "$CARFUSION_EXTRACTED/carfusion/annotations/car_keypoints_test.json" \
   --output datasets/CarFusion/coco/car_keypoints_all.json
 .venv/bin/python scripts/convert_carfusion.py \
   --coco-json datasets/CarFusion/coco/car_keypoints_all.json \
-  --images-root /home/caius/projects/yolopose/data/CarFusion/extracted/carfusion \
+  --images-root "$CARFUSION_EXTRACTED/carfusion" \
   --output datasets/CarFusion/yolo_pose --seed 0 \
   --invalid-bbox-policy drop --fixed-test-group car_penn
 .venv/bin/python scripts/check_carfusion.py --root datasets/CarFusion/yolo_pose
@@ -166,11 +170,23 @@ configs/pose_fasthead_kd_adaptive_50e_r4.yaml
 | NME | 0.05960 | 0.07635 |
 | fused FP16 latency | 5.6955 ms | 5.3314 ms |
 
-速度改善 6.39%，但 Pose mAP 损失 0.13886，因此不替换 baseline。模块剖析显示 FastHead 的 Backbone + Neck 占 71.6% 顶层模块时间；后续应先对 PSA、C2f/C2fCIB 和部署后端做硬件实测，不继续盲目缩小 Pose Head。详见 `reports/fasthead/final_50e/final_report.md`。
+速度改善 6.39%，但 Pose mAP 损失 0.13886，因此不替换 baseline。模块剖析
+显示 FastHead 的 Backbone + Neck 占 71.6% 顶层模块时间；后续因此转向
+PSA、C2f/C2fCIB 和 kernel-friendly 串行深度，不继续盲目缩小 Pose Head。
+详见 `reports/fasthead/final_50e/final_report.md`。
 
 ## 11. Fast / Balanced / Accurate
 
-真实 baseline 训练、正式 benchmark 与消融完成前不会生成虚假版本。后续复现入口预留为 `scripts/reproduce_fast.sh`、`reproduce_balanced.sh`、`reproduce_accurate.sh`。
+当前可复用的两类模型为：
+
+- Accurate：原始 200-epoch baseline，Box/Pose 约 `0.665/0.515`；
+- Balanced：P5-Zero，延迟下降 `14.83371%`，Box/Pose
+  `0.66254/0.49592`，推理峰值显存下降 `5.02307%`。
+
+Balanced 使用同源全模型 KD 和 Pose-only KD 精修，但部署只需最终学生模型。
+完整权重准备、训练、验证、paired latency、独立 memory 和测试命令见
+[README_P5ZERO.md](README_P5ZERO.md)。仓库不提供会意外启动长训练的一键
+脚本，也不提交 P5-Zero 生成权重。
 
 ## 12. 总验收
 

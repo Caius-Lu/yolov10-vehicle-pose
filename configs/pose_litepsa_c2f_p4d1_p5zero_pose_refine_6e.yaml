@@ -3,11 +3,14 @@
 # and the 14.7% structural latency gain are protected.
 pruned_weights: vehicle_pose_runs_kernel_depth/litepsa_c2f_p4d1_p5zero_kd_gate12e/weights/best.pt
 teacher_weights: vehicle_pose_runs_backbone_neck/carfusion_yolov10n_litepsa_c2f_p4d1_kd_adaptive_60e_r3/weights/best.pt
-data: reports/training/runtime_configs/CarFusion-pose.yaml
+# Keep the refinement stage on exactly the same split as stage 1.
+data: ultralytics/cfg/datasets/CarFusion-pose.yaml
 project: vehicle_pose_runs_kernel_depth
 name: litepsa_c2f_p4d1_p5zero_pose_refine_6e
 
 epochs: 6
+# Preserve epoch candidates for explicit dual-metric release selection.
+save_period: 1
 batch: 64
 imgsz: 640
 teacher_imgsz: 640

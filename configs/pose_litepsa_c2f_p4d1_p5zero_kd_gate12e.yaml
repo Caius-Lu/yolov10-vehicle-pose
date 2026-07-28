@@ -3,11 +3,16 @@
 # P3/P4 block and all prediction towers.
 pruned_weights: outputs/kernel_depth/litepsa_c2f_p4d1_p5zero_head96_folded_init.pt
 teacher_weights: vehicle_pose_runs_backbone_neck/carfusion_yolov10n_litepsa_c2f_p4d1_kd_adaptive_60e_r3/weights/best.pt
-data: reports/training/runtime_configs/CarFusion-pose.yaml
+# Use the versioned dataset descriptor by default. Change only its `path`
+# field (or point `data` at a copied runtime YAML) when data lives elsewhere.
+data: ultralytics/cfg/datasets/CarFusion-pose.yaml
 project: vehicle_pose_runs_kernel_depth
 name: litepsa_c2f_p4d1_p5zero_kd_gate12e
 
 epochs: 12
+# Preserve epoch candidates; release selection enforces Box and Pose gates
+# independently instead of relying only on the trainer's aggregate fitness.
+save_period: 1
 batch: 64
 imgsz: 640
 teacher_imgsz: 640
