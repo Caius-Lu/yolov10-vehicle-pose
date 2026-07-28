@@ -28,6 +28,14 @@ def build_model(checkpoint, device, half=False, fuse=False):
     return model
 
 
+def validate_output_path(output):
+    """Protect previously recorded benchmark evidence from silent replacement."""
+
+    output = Path(output)
+    if output.exists():
+        raise FileExistsError(f"benchmark output already exists: {output}")
+
+
 def summarize_paired_latency(baseline_rounds_ms, candidate_rounds_ms):
     """Summarize equal-count paired fused-FP16 rounds."""
     if not baseline_rounds_ms or len(baseline_rounds_ms) != len(candidate_rounds_ms):
@@ -107,6 +115,7 @@ def parse_args():
 
 def main():
     args = parse_args()
+    validate_output_path(args.output)
     device = torch.device(args.device)
     if args.candidate_checkpoint:
         payload = benchmark_paired_checkpoints(args, device)

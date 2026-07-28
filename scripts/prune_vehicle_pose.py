@@ -38,6 +38,10 @@ def validate_output_paths(checkpoint, output, report):
         raise ValueError("refusing to overwrite the baseline checkpoint")
     if output == report:
         raise ValueError("checkpoint output and JSON report must be different paths")
+    if output.exists():
+        raise FileExistsError(f"output checkpoint already exists: {output}")
+    if report.exists():
+        raise FileExistsError(f"output report already exists: {report}")
 
 
 def parse_args(argv=None):

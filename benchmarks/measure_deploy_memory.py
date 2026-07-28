@@ -29,8 +29,17 @@ def parameter_storage_bytes(model):
     return sum(tensor.numel() * tensor.element_size() for tensor in tensors)
 
 
+def validate_output_path(output):
+    """Protect previously recorded memory evidence from silent replacement."""
+
+    output = Path(output)
+    if output.exists():
+        raise FileExistsError(f"memory output already exists: {output}")
+
+
 def main():
     args = parse_args()
+    validate_output_path(args.output)
     device = torch.device(args.device)
     if device.type != "cuda":
         raise ValueError("deployment memory measurement requires CUDA")

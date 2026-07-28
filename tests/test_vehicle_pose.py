@@ -8,6 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 import torch
 
 from ultralytics.models.yolov10.predict import YOLOv10PosePredictor
@@ -18,6 +19,8 @@ from ultralytics.utils.ops import v10_pose_postprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 POSE_CFG = ROOT / "ultralytics/cfg/models/v10/yolov10n-vehicle-pose.yaml"
+POSE_S_CFG = ROOT / "ultralytics/cfg/models/v10/yolov10s-vehicle-pose.yaml"
+POSE_L_CFG = ROOT / "ultralytics/cfg/models/v10/yolov10l-vehicle-pose.yaml"
 DETECT_CFG = ROOT / "ultralytics/cfg/models/v10/yolov10n.yaml"
 OFFICIAL_WEIGHTS = ROOT / "weights/yolov10n.pt"
 
@@ -56,6 +59,17 @@ def test_pose_yaml_selects_pose_task_and_builds_expected_head():
     assert head.kpt_shape == [14, 3]
     assert head.nk == 42
     assert len(head.cv4) == len(head.one2one_cv4) == 3
+
+
+@pytest.mark.parametrize("config", [POSE_S_CFG, POSE_L_CFG])
+def test_s_and_l_pose_configs_build_the_same_public_pose_contract(config):
+    model = YOLOv10PoseModel(config, verbose=False)
+    head = model.model[-1]
+
+    assert guess_model_task(config) == "pose"
+    assert isinstance(head, v10Pose)
+    assert head.kpt_shape == [14, 3]
+    assert head.nc == 1
 
 
 def test_training_forward_has_both_detection_and_keypoint_branches():

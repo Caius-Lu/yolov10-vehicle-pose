@@ -3,10 +3,17 @@ from pathlib import Path
 import pytest
 import torch
 
-from benchmarks.benchmark_deploy_fp16 import build_model, summarize_paired_latency
+from benchmarks.benchmark_deploy_fp16 import (
+    build_model,
+    summarize_paired_latency,
+    validate_output_path as validate_latency_output,
+)
 from benchmarks.benchmark_end_to_end import load_sources
 from benchmarks.benchmark_torch import describe
-from benchmarks.measure_deploy_memory import parameter_storage_bytes
+from benchmarks.measure_deploy_memory import (
+    parameter_storage_bytes,
+    validate_output_path as validate_memory_output,
+)
 from scripts.build_training_manifest import build_manifest
 
 
@@ -81,6 +88,16 @@ def test_deploy_memory_counts_parameter_and_buffer_storage():
     expected = sum(tensor.numel() * tensor.element_size() for tensor in [*module.parameters(), *module.buffers()])
 
     assert parameter_storage_bytes(module) == expected
+
+
+@pytest.mark.parametrize("validator", [validate_latency_output, validate_memory_output])
+def test_benchmark_reports_refuse_to_overwrite_existing_evidence(tmp_path, validator):
+    output = tmp_path / "result.json"
+    validator(output)
+    output.write_text("existing evidence", encoding="utf-8")
+
+    with pytest.raises(FileExistsError, match="already exists"):
+        validator(output)
 
 
 def test_training_manifest_hashes_configs_and_dataset_summaries(tmp_path):

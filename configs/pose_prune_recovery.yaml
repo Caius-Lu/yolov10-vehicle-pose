@@ -1,0 +1,32 @@
+# Reusable recovery defaults. Override checkpoint paths and run name on the CLI.
+pruned_weights: outputs/pruning/student_pruned_init.pt
+teacher_weights: outputs/baseline_weights/best.pt
+data: ultralytics/cfg/datasets/CarFusion-pose.yaml
+project: vehicle_pose_runs_pruned
+name: pose_prune_recovery
+
+epochs: 20
+save_period: 1
+batch: 16
+imgsz: 640
+teacher_imgsz: 640
+distill_weight: 0.25
+temperature: 2.0
+detection_distill_weight: 1.0
+pose_distill_weight: 1.0
+device: 0
+workers: 8
+seed: 0
+fraction: 1.0
+
+optimizer: SGD
+lr0: 0.0002
+lrf: 0.1
+momentum: 0.937
+weight_decay: 0.0005
+warmup_epochs: 1.0
+
+mosaic: 0.0
+translate: 0.05
+scale: 0.2
+fliplr: 0.0

@@ -53,6 +53,16 @@ def resolve_project_path(value):
     return path if path.is_absolute() else ROOT / path
 
 
+def validate_new_run_directory(project, name, resume=False):
+    """Reject implicit run-name increments so later validation reads the intended checkpoint."""
+
+    run_directory = Path(project) / str(name)
+    if run_directory.exists() and not resume:
+        raise FileExistsError(
+            f"recovery run directory already exists: {run_directory}; choose a new --name or use --resume"
+        )
+
+
 def load_experiment_config(path):
     """Load and validate the independent pruning-distillation settings."""
 
@@ -110,31 +120,62 @@ class YOLOv10PosePrunedDistillationTrainer(YOLOv10PoseTrainer):
         return super().preprocess_batch(batch)
 
 
-def parse_args():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=ROOT / "configs/pose_prune_distill.yaml")
+    parser.add_argument("--pruned-weights", help="override the student checkpoint from the YAML config")
+    parser.add_argument("--teacher-weights", help="override the teacher checkpoint from the YAML config")
+    parser.add_argument("--data", help="override the dataset YAML from the YAML config")
+    parser.add_argument("--project", help="override the output project directory")
+    parser.add_argument("--resume", help="resume KD recovery from this run's last.pt")
     parser.add_argument("--epochs", type=int)
     parser.add_argument("--batch", type=int)
     parser.add_argument("--name")
     parser.add_argument("--fraction", type=float)
     parser.add_argument("--device")
-    return parser.parse_args()
+    return parser.parse_args(argv)
+
+
+def apply_cli_overrides(settings, args):
+    """Return a copy with explicitly supplied CLI values replacing YAML values."""
+
+    settings = dict(settings)
+    for key in (
+        "pruned_weights",
+        "teacher_weights",
+        "data",
+        "project",
+        "epochs",
+        "batch",
+        "name",
+        "fraction",
+        "device",
+        "resume",
+    ):
+        value = getattr(args, key, None)
+        if value is not None:
+            settings[key] = value
+    return settings
 
 
 def main():
     args = parse_args()
     settings = load_experiment_config(args.config)
-    for key in ("epochs", "batch", "name", "fraction", "device"):
-        value = getattr(args, key)
-        if value is not None:
-            settings[key] = value
+    settings = apply_cli_overrides(settings, args)
 
-    pruned_weights = resolve_project_path(settings.pop("pruned_weights"))
+    resume = settings.pop("resume", None)
+    resume_path = resolve_project_path(resume) if resume else None
+    initial_pruned_weights = resolve_project_path(settings.pop("pruned_weights"))
+    pruned_weights = resume_path or initial_pruned_weights
     teacher_weights = resolve_project_path(settings.pop("teacher_weights"))
     trainable_parameter_patterns = tuple(settings.pop("trainable_parameter_patterns", ()))
     settings["model"] = str(pruned_weights)
     settings["data"] = str(resolve_project_path(settings["data"]))
-    settings["project"] = str(resolve_project_path(settings.get("project", "vehicle_pose_runs_pruned")))
+    project = resolve_project_path(settings.get("project", "vehicle_pose_runs_pruned"))
+    validate_new_run_directory(project, settings.get("name", "train"), resume=bool(resume_path))
+    settings["project"] = str(project)
+    if resume_path:
+        settings["resume"] = str(resume_path)
     distillation_config = OutputDistillationConfig(
         weight=float(settings.pop("distill_weight")),
         teacher_imgsz=int(settings.pop("teacher_imgsz")),

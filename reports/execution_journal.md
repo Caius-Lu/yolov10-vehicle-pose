@@ -492,3 +492,26 @@ PYTHONPATH=. .venv/bin/pytest -q tests/test_fasthead_transfer.py tests/test_lite
   后续数据质量步骤因 WSL p9 等待达到外部 180 秒超时，仍不标记为综合全通过。
 - 使用独立读者审阅复现说明，并据此补齐直接父模型边界、门槛数值上下文、
   分卷归档行为、外部制品获取方式、严格显存判据和 checkpoint 选择规则。
+
+## 2026-07-28：n/s/l 通用剪枝入口与文档简化
+
+- 将主 README、Vehicle Pose 说明和结构化剪枝文档从“实验时间线”重写为
+  “训练 baseline → 生成剪枝学生 → KD 恢复 → 精度/速度/显存验收”的单一路径；
+  历史实验只保留报告链接，明确 P5-Zero 是 `n` 的实测结论，不能套用为
+  `s/l` 结果。
+- 新增 `yolov10s-vehicle-pose.yaml`、`yolov10l-vehicle-pose.yaml` 和通用
+  `configs/pose_prune_recovery.yaml`。剪枝网络大小由 whole-model checkpoint
+  自动确定，不新增 `--variant` 等重复参数。
+- 恢复蒸馏 CLI 新增 `--pruned-weights`、`--teacher-weights`、`--data`、
+  `--project` 覆盖项，使一份配置可用于 n/s/l；新增 `--resume`，允许从同一
+  KD run 的 `last.pt` 恢复 optimizer、EMA 和 epoch。
+- 增加证据安全边界：剪枝 checkpoint、结构报告、恢复 run 目录、paired
+  latency JSON 和 memory JSON 已存在时直接报错，不再静默覆盖或自动生成
+  难以定位的 `name2`。
+- TDD 红灯分别确认缺少通用 CLI、s/l YAML、断点续训、run/报告防覆盖；实现后
+  WSL 聚焦回归 **47 passed**，四个文档命令对应的 CLI `--help` 全部通过。
+- 最终综合脚本首段 **35 passed**，预训练权重迁移和部署输出一致性
+  `shape_equal=true`、max/mean error=0；随后数据质量阶段在 WSL p9 路径
+  连续 50 秒无输出，人工安全中止。因此不把综合脚本标记为全量通过。
+- 独立新读者两轮审阅依次发现并推动修复：错误 benchmark 模块名、缺少真实
+  resume、产物覆盖、只验证 candidate 等问题；最终静态复审未发现新的 P0/P1。
