@@ -189,3 +189,9 @@ pnnx*
 !/external/**
 /external/**/.git/
 !reports/**/*.log
+weights/
+outputs/
+logs/
+
+
+
