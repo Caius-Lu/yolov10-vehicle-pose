@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install pytest && pip install -r requirements.txt
+      - name: Run tests
+        run: pytest test_vehicle_pose.py test_carfusion_pipeline.py test_vehicle_pose_metrics.py test_benchmark_tools.py test_pose_pruning_distillation.py test_pose_pruning_pipeline.py -q --disable-warnings
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
