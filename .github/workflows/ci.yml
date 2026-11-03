@@ -15,4 +15,4 @@ jobs:
           pip install pytest && pip install -r requirements.txt
           pip install -e . --no-deps
       - name: Run tests
-        run: pytest tests/test_vehicle_pose.py tests/test_carfusion_pipeline.py tests/test_vehicle_pose_metrics.py tests/test_benchmark_tools.py tests/test_pose_pruning_distillation.py tests/test_pose_pruning_pipeline.py -q --disable-warnings
+        run: PYTHONPATH=$PWD pytest tests/test_vehicle_pose.py tests/test_carfusion_pipeline.py tests/test_vehicle_pose_metrics.py tests/test_benchmark_tools.py tests/test_pose_pruning_distillation.py tests/test_pose_pruning_pipeline.py -q --disable-warnings
