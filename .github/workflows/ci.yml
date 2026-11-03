@@ -11,22 +11,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install dependencies
-        run: pip install pytest && pip install -r requirements.txt
+        run: |
+          pip install pytest && pip install -r requirements.txt
+          pip install -e . --no-deps
       - name: Run tests
-        run: pytest test_vehicle_pose.py test_carfusion_pipeline.py test_vehicle_pose_metrics.py test_benchmark_tools.py test_pose_pruning_distillation.py test_pose_pruning_pipeline.py -q --disable-warnings
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        run: pytest tests/test_vehicle_pose.py tests/test_carfusion_pipeline.py tests/test_vehicle_pose_metrics.py tests/test_benchmark_tools.py tests/test_pose_pruning_distillation.py tests/test_pose_pruning_pipeline.py -q --disable-warnings
